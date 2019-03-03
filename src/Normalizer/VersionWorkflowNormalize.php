@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Normalizer;
 
+use Coosos\VersionWorkflowBundle\Tests\Model\News;
+use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
@@ -29,6 +31,25 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
      */
     public function denormalize($data, $class, $format = null, array $context = [])
     {
+        if ($class !== \ArrayIterator::class) {
+            foreach ($data as $attribute => $value) {
+                if (is_array($value) && isset($value['__class_name'])) {
+                    if ($value['__class_name'] === 'Doctrine\Common\Collections\ArrayCollection') {
+                        $arrayCopy = $value['iterator']['arrayCopy'];
+                        foreach ($arrayCopy as $key => $arrayCopyValue) {
+                            if (is_array($arrayCopyValue) && isset($arrayCopyValue['__class_name'])) {
+                                $arrayCopy[$key] = $this->denormalize($arrayCopyValue, $arrayCopyValue['__class_name'], $format, $context);
+                            }
+                        }
+
+                        $data[$attribute] = $arrayCopy;
+                    } else {
+                        $data[$attribute] = $this->denormalize($value, $value['__class_name'], $format, $context);
+                    }
+                }
+            }
+        }
+
         return parent::denormalize($data, $class, $format, $context);
     }
 
