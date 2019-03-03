@@ -2,6 +2,9 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use phpDocumentor\Reflection\Types\Array_;
+
 /**
  * Class News
  *
@@ -34,6 +37,11 @@ class News
      * @var Comment[]|null
      */
     private $comments;
+
+    public function __construct()
+    {
+        $this->comments = new ArrayCollection();
+    }
 
     /**
      * @return int|null
@@ -95,7 +103,7 @@ class News
     /**
      * @return User
      */
-    public function getAuthor(): ?User
+    public function getAuthor()
     {
         return $this->author;
     }
@@ -104,7 +112,7 @@ class News
      * @param User $author
      * @return News
      */
-    public function setAuthor(User $author): News
+    public function setAuthor($author): News
     {
         $this->author = $author;
 
@@ -114,7 +122,7 @@ class News
     /**
      * @return Comment[]|null
      */
-    public function getComments(): ?array
+    public function getComments()
     {
         return $this->comments;
     }
@@ -123,9 +131,20 @@ class News
      * @param Comment[]|null $comments
      * @return News
      */
-    public function setComments(?array $comments): News
+    public function setComments($comments): News
     {
         $this->comments = $comments;
+
+        return $this;
+    }
+
+    /**
+     * @param Comment $comment
+     * @return News
+     */
+    public function addComments(Comment $comment): News
+    {
+        $this->comments[] = $comment;
 
         return $this;
     }
