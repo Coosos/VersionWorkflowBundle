@@ -10,3 +10,7 @@ services:
 
   Coosos\VersionWorkflowBundle\Service\SerializerService:
     public: true
+
+  Coosos\VersionWorkflowBundle\EventListener\PreSerializer\TransformArrayCollectionToArrayListener:
+    tags:
+      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serializer }
