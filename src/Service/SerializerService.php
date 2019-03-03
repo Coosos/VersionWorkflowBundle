@@ -14,7 +14,7 @@ class SerializerService implements SerializerInterface
      */
     public function serialize($data, $format, array $context = [])
     {
-        dump($this->getSerializer()->serialize($data, $format, $context));
+        return $this->getSerializer()->serialize($data, $format, $context);
     }
 
     /**
@@ -22,6 +22,7 @@ class SerializerService implements SerializerInterface
      */
     public function deserialize($data, $type, $format, array $context = [])
     {
+        return $this->getSerializer()->deserialize($data, $type, $format, $context = []);
     }
 
     protected function getSerializer()

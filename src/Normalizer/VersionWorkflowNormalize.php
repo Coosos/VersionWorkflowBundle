@@ -27,6 +27,22 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
     /**
      * {@inheritdoc}
      */
+    public function denormalize($data, $class, $format = null, array $context = [])
+    {
+        return parent::denormalize($data, $class, $format, $context);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsDenormalization($data, $type, $format = null)
+    {
+        return parent::supportsDenormalization($data, $type, $format);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function supportsNormalization($data, $format = null)
     {
         return is_object($data) && $format === 'json';
