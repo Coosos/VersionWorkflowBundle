@@ -13,8 +13,9 @@ services:
 
   Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformArrayCollectionListener:
     tags:
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serializer }
+      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
 
   Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformDateTimeListener:
     tags:
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serializer }
+      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
+      - { name: kernel.event_listener, event: coosos.version_workflow.pre_deserialize }

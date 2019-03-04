@@ -2,7 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
-use Coosos\VersionWorkflowBundle\Event\PreSerializerEvent;
+use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
+use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 
 /**
@@ -29,13 +30,51 @@ class TransformDateTimeListener
     }
 
     /**
-     * @param PreSerializerEvent $preSerializerEvent
+     * @param PreSerializeEvent $preSerializerEvent
      * @throws \ReflectionException
      */
-    public function onCoososVersionWorkflowPreSerializer(PreSerializerEvent $preSerializerEvent)
+    public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializerEvent)
     {
         $model = $preSerializerEvent->getData();
         $this->tranformDateTimeToStringRecursive($model);
+    }
+
+    /**
+     * @param PreDeserializeEvent $preDeserializeEvent
+     * @throws \ReflectionException
+     */
+    public function onCoososVersionWorkflowPreDeserialize(PreDeserializeEvent $preDeserializeEvent)
+    {
+        $data = $preDeserializeEvent->getData();
+        $data = $this->transformStringToDateTimeRecursive($data);
+        $preDeserializeEvent->setData($data);
+    }
+
+    /**
+     * @param $data
+     * @return object
+     * @throws \ReflectionException
+     */
+    public function transformStringToDateTimeRecursive($data)
+    {
+        if (isset($data['__class_name']) && $data['__class_name'] === 'DateTime') {
+            $reflector = new \ReflectionClass(\DateTime::class);
+            return $reflector->newInstanceArgs($data['__construct']);
+        }
+
+        foreach ($data as $attr => $value) {
+            if (is_array($value) && isset($value['__class_name'])) {
+                $data[$attr] = $this->transformStringToDateTimeRecursive($value);
+            } elseif (is_array($value) && !isset($value['__class_name'])) {
+                foreach ($value as $key => $element) {
+                    $value[$key] = $this->transformStringToDateTimeRecursive($element);
+                }
+
+                $data[$attr] = $value;
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -50,7 +89,7 @@ class TransformDateTimeListener
         }
 
         if ($this->isDateTime($model)) {
-            return ['__class_name' => 'DateTime', 'value' => $model->format(\DateTime::ISO8601)];
+            return ['__class_name' => 'DateTime', '__construct' => [$model->format(\DateTime::ISO8601)]];
         }
 
         $reflect = new \ReflectionClass($model);

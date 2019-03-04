@@ -95,6 +95,25 @@ class VersionWorkflowService
     }
 
     /**
+     * @param VersionWorkflow $object
+     * @param array $params
+     * @return VersionWorkflowTrait
+     */
+    public function transformToObject(VersionWorkflow $object, array $params = [])
+    {
+        $entity = $this->serializerService->deserialize(
+            $object->getObjectSerialized(),
+            $object->getModelName(),
+            'json',
+            $params
+        );
+
+        $entity->setVersionWorkflow($object);
+
+        return $entity;
+    }
+
+    /**
      * @param mixed $object
      * @return string
      */

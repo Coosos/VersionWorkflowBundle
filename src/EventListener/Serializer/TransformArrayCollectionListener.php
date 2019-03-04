@@ -2,7 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
-use Coosos\VersionWorkflowBundle\Event\PreSerializerEvent;
+use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 
 /**
@@ -31,12 +31,12 @@ class TransformArrayCollectionListener
     }
 
     /**
-     * @param PreSerializerEvent $preSerializerEvent
+     * @param PreSerializeEvent $preSerializeEvent
      * @throws \ReflectionException
      */
-    public function onCoososVersionWorkflowPreSerializer(PreSerializerEvent $preSerializerEvent)
+    public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializeEvent)
     {
-        $model = $preSerializerEvent->getData();
+        $model = $preSerializeEvent->getData();
         $this->transformArrayCollectionToArrayRecursive($model);
     }
 
