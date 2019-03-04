@@ -16,6 +16,21 @@ class CloneObject
     public $alreadyHashObject;
 
     /**
+     * @var ClassContains
+     */
+    private $classContains;
+
+    /**
+     * CloneObject constructor.
+     *
+     * @param ClassContains $classContains
+     */
+    public function __construct(ClassContains $classContains)
+    {
+        $this->classContains = $classContains;
+    }
+
+    /**
      * @param $model
      * @param $ignoreProperty
      * @return mixed
@@ -24,6 +39,7 @@ class CloneObject
     public function cloneObject($model, $ignoreProperty)
     {
         $this->alreadyHashObject = [];
+
         return $this->cloneObjectRecursive($model, $ignoreProperty);
     }
 
@@ -49,21 +65,23 @@ class CloneObject
                 continue;
             }
 
-            if (method_exists($modelCloned, 'get' . ucfirst($property->getName()))
-                && (is_object($modelCloned->{'get' . ucfirst($property->getName())}())
-                    || is_array($modelCloned->{'get' . ucfirst($property->getName())}()))
+            $getterMethod = $this->classContains->getGetterMethod($modelCloned, $property->getName());
+            $setterMethod = $this->classContains->getSetterMethod($modelCloned, $property->getName());
+            if (!is_null($getterMethod)
+                && (is_object($modelCloned->{$getterMethod}())
+                    || is_array($modelCloned->{$getterMethod}()))
             ) {
-                if (is_array($modelCloned->{'get' . ucfirst($property->getName())}())
-                    || $modelCloned->{'get' . ucfirst($property->getName())}() instanceof \ArrayAccess
+                if (is_array($modelCloned->{$getterMethod}())
+                    || $modelCloned->{$getterMethod}() instanceof \ArrayAccess
                 ) {
                     $list = [];
-                    foreach ($modelCloned->{'get' . ucfirst($property->getName())}() as $item) {
+                    foreach ($modelCloned->{$getterMethod}() as $item) {
                         $list[] = $this->cloneObjectRecursive($item, $ignoreProperty);
                     }
 
-                    $modelCloned->{'set' . ucfirst($property->getName())}($list);
-                } elseif (is_object($modelCloned->{'get' . ucfirst($property->getName())}())) {
-                    $sModel = $modelCloned->{'get' . ucfirst($property->getName())}();
+                    $modelCloned->{$setterMethod}($list);
+                } elseif (is_object($modelCloned->{$getterMethod}())) {
+                    $sModel = $modelCloned->{$getterMethod}();
                     $cloneResult = $this->cloneObjectRecursive($sModel, $ignoreProperty);
 
                     $reflectProperty = new \ReflectionProperty(get_class($modelCloned), $property->getName());
