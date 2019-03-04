@@ -84,8 +84,8 @@ class VersionWorkflowService
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object));
         $versionWorkflow->setModelName(get_class($object));
 
-        if ($object->getVersionWorkflowObject()) {
-            $versionWorkflow->setInherit($object->getVersionWorkflowObject());
+        if ($object->getVersionWorkflow()) {
+            $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
         $versionWorkflow->setObjectSerialized($this->serializerService->serialize($object, 'json', $params));

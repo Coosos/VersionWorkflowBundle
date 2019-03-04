@@ -12,23 +12,23 @@ trait VersionWorkflowTrait
     /**
      * @var VersionWorkflow|null
      */
-    protected $versionWorkflowObject;
+    protected $versionWorkflow;
 
     /**
      * @return VersionWorkflow|null
      */
-    public function getVersionWorkflowObject()
+    public function getVersionWorkflow()
     {
-        return $this->versionWorkflowObject;
+        return $this->versionWorkflow;
     }
 
     /**
-     * @param VersionWorkflow|null $versionWorkflowObject
+     * @param VersionWorkflow|null $versionWorkflow
      * @return VersionWorkflowTrait
      */
-    public function setVersionWorkflowObject(?VersionWorkflow $versionWorkflowObject)
+    public function setVersionWorkflow(?VersionWorkflow $versionWorkflow)
     {
-        $this->versionWorkflowObject = $versionWorkflowObject;
+        $this->versionWorkflow = $versionWorkflow;
 
         return $this;
     }

@@ -20,8 +20,8 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
      */
     public function normalize($object, $format = null, array $context = [])
     {
-        if (method_exists($object, 'setVersionWorkflowObject')) {
-            $object->setVersionWorkflowObject(null);
+        if (method_exists($object, 'setVersionWorkflow')) {
+            $object->setVersionWorkflow(null);
         }
 
         $parent = parent::normalize($object, $format, $context);
