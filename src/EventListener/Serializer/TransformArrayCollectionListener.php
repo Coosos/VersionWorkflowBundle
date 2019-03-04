@@ -1,17 +1,19 @@
 <?php
 
-namespace Coosos\VersionWorkflowBundle\EventListener\PreSerializer;
+namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
 use Coosos\VersionWorkflowBundle\Event\PreSerializerEvent;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 
 /**
- * Class TransformArrayCollectionToArrayListener
+ * Class TransformArrayCollection
  *
- * @package Coosos\VersionWorkflowBundle\EventListener\PreSerializer
+ * Transform doctrine array collection to array
+ *
+ * @package Coosos\VersionWorkflowBundle\EventListener\Serializer
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class TransformArrayCollectionToArrayListener
+class TransformArrayCollectionListener
 {
     /**
      * @var ClassContains
