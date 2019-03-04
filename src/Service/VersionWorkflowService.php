@@ -5,6 +5,7 @@ namespace Coosos\VersionWorkflowBundle\Service;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use Coosos\VersionWorkflowBundle\Utils\CloneObject;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -29,6 +30,10 @@ class VersionWorkflowService
      * @var ClassContains
      */
     private $classContains;
+    /**
+     * @var CloneObject
+     */
+    private $cloneObject;
 
     /**
      * VersionWorkflowService constructor.
@@ -36,15 +41,18 @@ class VersionWorkflowService
      * @param SerializerService $serializerService
      * @param Registry $workflows
      * @param ClassContains $classContains
+     * @param CloneObject $cloneObject
      */
     public function __construct(
         SerializerService $serializerService,
         Registry $workflows,
-        ClassContains $classContains
+        ClassContains $classContains,
+        CloneObject $cloneObject
     ) {
         $this->serializerService = $serializerService;
         $this->workflows = $workflows;
         $this->classContains = $classContains;
+        $this->cloneObject = $cloneObject;
     }
 
     /**
@@ -77,19 +85,22 @@ class VersionWorkflowService
      * @param VersionWorkflowTrait $object
      * @param array $params
      * @return VersionWorkflow
+     * @throws \ReflectionException
      */
     public function transformToVersionWorkflowModel($object, $params = [])
     {
         $versionWorkflow = new VersionWorkflow();
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object));
         $versionWorkflow->setModelName(get_class($object));
+        $versionWorkflow->setMarking($this->getMarkingValue($object));
 
         if ($object->getVersionWorkflow()) {
             $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
+        $object = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
+
         $versionWorkflow->setObjectSerialized($this->serializerService->serialize($object, 'json', $params));
-        $versionWorkflow->setMarking($this->getMarkingValue($object));
 
         return $versionWorkflow;
     }
