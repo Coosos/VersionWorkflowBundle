@@ -19,3 +19,7 @@ services:
     tags:
       - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
       - { name: kernel.event_listener, event: coosos.version_workflow.pre_deserialize }
+
+  Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformRelationBidirectionalListener:
+    tags:
+      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize, priority: 1000 }
