@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Normalizer;
 
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 
@@ -15,9 +16,14 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
 {
     /**
      * {@inheritdoc}
+     * @var VersionWorkflowTrait $object
      */
     public function normalize($object, $format = null, array $context = [])
     {
+        if (method_exists($object, 'setVersionWorkflowObject')) {
+            $object->setVersionWorkflowObject(null);
+        }
+
         $parent = parent::normalize($object, $format, $context);
         $parent['__class_name'] = get_class($object);
 
