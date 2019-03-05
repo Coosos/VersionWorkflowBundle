@@ -52,7 +52,7 @@ class Comment
     /**
      * @return News|null
      */
-    public function getNews(): ?News
+    public function getNews()
     {
         return $this->news;
     }
@@ -61,7 +61,7 @@ class Comment
      * @param News|null $news
      * @return Comment
      */
-    public function setNews(?News $news): Comment
+    public function setNews($news): Comment
     {
         $this->news = $news;
 
@@ -71,7 +71,7 @@ class Comment
     /**
      * @return User|null
      */
-    public function getUser(): ?User
+    public function getUser()
     {
         return $this->user;
     }
@@ -80,7 +80,7 @@ class Comment
      * @param User|null $user
      * @return Comment
      */
-    public function setUser(?User $user): Comment
+    public function setUser($user): Comment
     {
         $this->user = $user;
 

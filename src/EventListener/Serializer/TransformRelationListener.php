@@ -205,7 +205,8 @@ class TransformRelationListener
 
                 $object->{$setterMethod}($getterValueArray);
             } else {
-                $object->{$setterMethod}($this->transformRelationBidirectionalToUnidirectionalRecursive($getterValue));
+                $result = $this->transformRelationBidirectionalToUnidirectionalRecursive($getterValue);
+                $object->{$setterMethod}($result);
             }
         }
 
