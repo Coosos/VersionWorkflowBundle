@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
+use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
@@ -41,8 +42,23 @@ class TransformRelationBidirectionalListener
     public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializeEvent)
     {
         $this->alreadyHashObject = [];
-        $object = $preSerializeEvent->getObject();
+        $object = $preSerializeEvent->getData();
         $this->transformRelationBidirectionalToUnidirectionalRecursive($object);
+    }
+
+    /**
+     * @param PostNormalizeEvent $postNormalizeEvent
+     */
+    public function onCoososVersionWorkflowPostNormalize(PostNormalizeEvent $postNormalizeEvent)
+    {
+        $sourceObject = $postNormalizeEvent->getSourceData();
+        $data = $postNormalizeEvent->getData();
+
+        if (property_exists($sourceObject, 'versionWorkflowSplObjectHash')) {
+            $data['versionWorkflowSplObjectHash'] = $sourceObject->{'versionWorkflowSplObjectHash'};
+        }
+
+        $postNormalizeEvent->setData($data);
     }
 
     /**

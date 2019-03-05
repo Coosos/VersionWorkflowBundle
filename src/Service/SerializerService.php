@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Service;
 
+use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Normalizer\VersionWorkflowNormalize;
@@ -38,16 +39,27 @@ class SerializerService implements SerializerInterface
      */
     public function serialize($data, $format, array $context = [])
     {
+        $preSerializeEvent = new PreSerializeEvent($data);
+        $this->eventDispatcher->dispatch(PreSerializeEvent::EVENT_NAME, $preSerializeEvent);
+
         return $this->getSerializer()->serialize($data, $format, $context);
     }
 
     /**
      * {@inheritdoc}
      * @return VersionWorkflowTrait
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function deserialize($data, $type, $format, array $context = [])
     {
-        return $this->getSerializer()->deserialize($data, $type, $format, $context = []);
+        $data = $this->getSerializer()->decode($data, $format, $context);
+
+        $predeserializeEvent = new PreDeserializeEvent($data, $type);
+        $this->eventDispatcher->dispatch(PreDeserializeEvent::EVENT_NAME, $predeserializeEvent);
+
+        $data = $predeserializeEvent->getData();
+
+        return $this->getSerializer()->denormalize($data, $type, $format, $context = []);
     }
 
     /**

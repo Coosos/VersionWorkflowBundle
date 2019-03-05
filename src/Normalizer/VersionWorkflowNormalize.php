@@ -2,7 +2,9 @@
 
 namespace Coosos\VersionWorkflowBundle\Normalizer;
 
+use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
+use Coosos\VersionWorkflowBundle\Event\PreNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -59,17 +61,20 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
      */
     public function normalize($object, $format = null, array $context = [])
     {
+        $preNormalizeEvent = new PreNormalizeEvent($object);
+        $this->eventDispatcher->dispatch(PreNormalizeEvent::EVENT_NAME, $preNormalizeEvent);
+
         if (method_exists($object, 'setVersionWorkflow')) {
             $object->setVersionWorkflow(null);
         }
 
-        $preSerializeEvent = new PreSerializeEvent($object);
-        $this->eventDispatcher->dispatch(PreSerializeEvent::EVENT_NAME, $preSerializeEvent);
-
         $parent = parent::normalize($object, $format, $context);
         $parent['__class_name'] = get_class($object);
 
-        return $parent;
+        $postNormalizeEvent = new PostNormalizeEvent($parent, $object);
+        $this->eventDispatcher->dispatch(PostNormalizeEvent::EVENT_NAME, $postNormalizeEvent);
+
+        return $postNormalizeEvent->getData();
     }
 
     /**
@@ -78,11 +83,6 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
      */
     public function denormalize($data, $class, $format = null, array $context = [])
     {
-        $predeserializeEvent = new PreDeserializeEvent($data, $class);
-        $this->eventDispatcher->dispatch(PreDeserializeEvent::EVENT_NAME, $predeserializeEvent);
-
-        $data = $predeserializeEvent->getData();
-
         $object = $this->denormalizeRecursive($data, $class, $format, $context);
 
         return $object;

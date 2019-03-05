@@ -37,8 +37,7 @@ class PreSerializeEvent extends Event
     }
 
     /**
-     * @return mixed
-     * @deprecated
+     * @return VersionWorkflowTrait|mixed
      */
     public function getData()
     {
@@ -47,6 +46,7 @@ class PreSerializeEvent extends Event
 
     /**
      * @return VersionWorkflowTrait|mixed
+     * @deprecated
      */
     public function getObject()
     {
