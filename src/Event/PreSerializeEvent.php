@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Event;
 
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Symfony\Component\EventDispatcher\Event;
 
 /**
@@ -20,6 +21,11 @@ class PreSerializeEvent extends Event
     private $data;
 
     /**
+     * @var VersionWorkflowTrait|mixed
+     */
+    private $object;
+
+    /**
      * PreSerializerEvent constructor.
      *
      * @param mixed $data
@@ -27,13 +33,23 @@ class PreSerializeEvent extends Event
     public function __construct($data)
     {
         $this->data = $data;
+        $this->object = $data;
     }
 
     /**
-     * @return mixed
+     * @return VersionWorkflowTrait|mixed
      */
     public function getData()
     {
         return $this->data;
+    }
+
+    /**
+     * @return VersionWorkflowTrait|mixed
+     * @deprecated
+     */
+    public function getObject()
+    {
+        return $this->object;
     }
 }

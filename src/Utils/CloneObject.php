@@ -51,13 +51,15 @@ class CloneObject
      */
     protected function cloneObjectRecursive($model, $ignoreProperty)
     {
-        if (in_array(spl_object_hash($model), $this->alreadyHashObject)) {
-           return $model;
+        $splObjectHash = spl_object_hash($model);
+
+        if (isset($this->alreadyHashObject[$splObjectHash])) {
+            return $this->alreadyHashObject[$splObjectHash];
         }
 
-        $this->alreadyHashObject[] = spl_object_hash($model);
-
         $modelCloned = clone $model;
+        $this->alreadyHashObject[$splObjectHash] = $modelCloned;
+
         $reflection = new \ReflectionClass(get_class($modelCloned));
         $properties = $reflection->getProperties();
         foreach ($properties as $property) {
