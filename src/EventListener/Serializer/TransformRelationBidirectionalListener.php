@@ -162,31 +162,6 @@ class TransformRelationBidirectionalListener
     }
 
     /**
-     * @param array|mixed $source
-     * @param mixed $data
-     * @return mixed
-     */
-    protected function transformRelationUnidirectionalToBidirectionalRecursive($source, $data)
-    {
-        if (is_object($source)) {
-            return $source;
-        }
-
-        if (isset($source[self::ATTR_NAME])) {
-            if (isset($this->alreadyHashObject[$source[self::ATTR_NAME]])) {
-                return $this->alreadyHashObject[$source[self::ATTR_NAME]];
-            }
-
-            $this->alreadyHashObject[$source[self::ATTR_NAME]] = $data;
-        }
-
-
-
-
-        return $data;
-    }
-
-    /**
      * @param VersionWorkflowTrait|mixed $object
      * @return VersionWorkflowTrait|mixed
      * @throws \ReflectionException
