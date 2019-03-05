@@ -9,12 +9,12 @@ use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 
 /**
- * Class TransformRelationBidirectionalListener
+ * Class TransformRelationListener
  *
  * @package Coosos\VersionWorkflowBundle\EventListener\Serializer
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class TransformRelationBidirectionalListener
+class TransformRelationListener
 {
     const ATTR_NAME = 'versionworkflow_splobjecthash';
 
@@ -29,7 +29,7 @@ class TransformRelationBidirectionalListener
     private $classContains;
 
     /**
-     * TransformRelationBidirectionalListener constructor.
+     * TransformRelationListener constructor.
      *
      * @param ClassContains $classContains
      */
