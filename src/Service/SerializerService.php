@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Service;
 
+use Coosos\VersionWorkflowBundle\Event\PostDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
@@ -54,12 +55,17 @@ class SerializerService implements SerializerInterface
     {
         $data = $this->getSerializer()->decode($data, $format, $context);
 
-        $predeserializeEvent = new PreDeserializeEvent($data, $type);
-        $this->eventDispatcher->dispatch(PreDeserializeEvent::EVENT_NAME, $predeserializeEvent);
+        $preDeserializeEvent = new PreDeserializeEvent($data, $type);
+        $this->eventDispatcher->dispatch(PreDeserializeEvent::EVENT_NAME, $preDeserializeEvent);
 
-        $data = $predeserializeEvent->getData();
+        $data = $preDeserializeEvent->getData();
 
-        return $this->getSerializer()->denormalize($data, $type, $format, $context = []);
+        $denormalize = $this->getSerializer()->denormalize($data, $type, $format, $context = []);
+
+        $postDeserializeEvent = new PostDeserializeEvent($denormalize, $data);
+        $this->eventDispatcher->dispatch(PostDeserializeEvent::EVENT_NAME, $postDeserializeEvent);
+
+        return $postDeserializeEvent->getData();
     }
 
     /**

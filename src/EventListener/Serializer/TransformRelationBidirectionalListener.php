@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
+use Coosos\VersionWorkflowBundle\Event\PostDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
@@ -15,6 +16,8 @@ use Coosos\VersionWorkflowBundle\Utils\ClassContains;
  */
 class TransformRelationBidirectionalListener
 {
+    const ATTR_NAME = 'versionworkflow_splobjecthash';
+
     /**
      * @var array
      */
@@ -54,11 +57,133 @@ class TransformRelationBidirectionalListener
         $sourceObject = $postNormalizeEvent->getSourceData();
         $data = $postNormalizeEvent->getData();
 
-        if (property_exists($sourceObject, 'versionWorkflowSplObjectHash')) {
-            $data['versionWorkflowSplObjectHash'] = $sourceObject->{'versionWorkflowSplObjectHash'};
+        if (property_exists($sourceObject, self::ATTR_NAME)) {
+            $data[self::ATTR_NAME] = $sourceObject->{self::ATTR_NAME};
         }
 
         $postNormalizeEvent->setData($data);
+    }
+
+    /**
+     * @param PostDeserializeEvent $postDeserializeEvent
+     */
+    public function onCoososVersionWorkflowPostDeserialize(PostDeserializeEvent $postDeserializeEvent)
+    {
+        $this->alreadyHashObject = [];
+        $data = $postDeserializeEvent->getData();
+        $source = $postDeserializeEvent->getSourceData();
+        $this->analyzeToRestoreRelation($source, $data);
+        $this->restoreRelation($source, $data);
+
+        $postDeserializeEvent->setData($data);
+    }
+
+    /**
+     * Restore relation in object
+     *
+     * @param array|mixed $source
+     * @param mixed $data
+     * @return null
+     */
+    protected function restoreRelation($source, $data)
+    {
+        if (!is_array($source) && is_object($source)) {
+            return null;
+        }
+
+        if (!isset($source['__class_name'])) {
+            foreach ($source as $key => $item) {
+                $this->restoreRelation($item, $data[$key]);
+            }
+
+            return null;
+        }
+
+        foreach ($source as $attr => $value) {
+            $getterMethod = $this->classContains->getGetterMethod($data, $attr);
+            $setterMethod = $this->classContains->getSetterMethod($data, $attr);
+            if (is_array($value) && isset($value['__class_name'])) {
+                if ($getterMethod) {
+                    $this->restoreRelation($value, $data->{$getterMethod}());
+                }
+            } elseif (is_array($value) && !isset($value['__class_name'])) {
+                foreach ($value as $key => $item) {
+                    if ($getterMethod) {
+                        $this->restoreRelation($item, $data->{$getterMethod}()[$key]);
+                    }
+                }
+            } elseif (is_string($value) && isset($this->alreadyHashObject[$value]) && $attr !== self::ATTR_NAME) {
+                $data->{$setterMethod}($this->alreadyHashObject[$value]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Analyze for restore relation
+     *
+     * @param mixed $source
+     * @param mixed $data
+     * @return null
+     */
+    protected function analyzeToRestoreRelation($source, $data)
+    {
+        if (!is_array($source) && is_object($source)) {
+            return null;
+        }
+
+        if (!isset($source['__class_name'])) {
+            foreach ($source as $key => $item) {
+                $this->analyzeToRestoreRelation($item, $data[$key]);
+            }
+
+            return null;
+        }
+
+        $this->alreadyHashObject[$source[self::ATTR_NAME]] = $data;
+
+        foreach ($source as $attr => $value) {
+            $getterMethod = $this->classContains->getGetterMethod($data, $attr);
+            if (is_array($value) && isset($value['__class_name'])) {
+                if ($getterMethod) {
+                    $this->analyzeToRestoreRelation($value, $data->{$getterMethod}());
+                }
+            } elseif (is_array($value) && !isset($value['__class_name'])) {
+                foreach ($value as $key => $item) {
+                    if ($getterMethod) {
+                        $this->analyzeToRestoreRelation($item, $data->{$getterMethod}()[$key]);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array|mixed $source
+     * @param mixed $data
+     * @return mixed
+     */
+    protected function transformRelationUnidirectionalToBidirectionalRecursive($source, $data)
+    {
+        if (is_object($source)) {
+            return $source;
+        }
+
+        if (isset($source[self::ATTR_NAME])) {
+            if (isset($this->alreadyHashObject[$source[self::ATTR_NAME]])) {
+                return $this->alreadyHashObject[$source[self::ATTR_NAME]];
+            }
+
+            $this->alreadyHashObject[$source[self::ATTR_NAME]] = $data;
+        }
+
+
+
+
+        return $data;
     }
 
     /**
@@ -79,7 +204,7 @@ class TransformRelationBidirectionalListener
         }
 
         $this->alreadyHashObject[$splObjectHash] = $splObjectHash;
-        $object->versionWorkflowSplObjectHash = $splObjectHash;
+        $object->{self::ATTR_NAME} = $splObjectHash;
 
         $reflect = new \ReflectionClass($object);
         $properties = $reflect->getProperties(
