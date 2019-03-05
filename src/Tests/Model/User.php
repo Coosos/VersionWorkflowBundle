@@ -21,6 +21,11 @@ class User
     private $username;
 
     /**
+     * @var string
+     */
+    private $email;
+
+    /**
      * @return int|null
      */
     public function getId(): ?int
@@ -54,6 +59,25 @@ class User
     public function setUsername(string $username): User
     {
         $this->username = $username;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * @param string $email
+     * @return User
+     */
+    public function setEmail(string $email): User
+    {
+        $this->email = $email;
 
         return $this;
     }

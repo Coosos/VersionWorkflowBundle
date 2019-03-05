@@ -16,6 +16,11 @@ class Comment
     private $id;
 
     /**
+     * @var News|null
+     */
+    private $news;
+
+    /**
      * @var User|null
      */
     private $user;
@@ -40,6 +45,25 @@ class Comment
     public function setId(?int $id): Comment
     {
         $this->id = $id;
+
+        return $this;
+    }
+
+    /**
+     * @return News|null
+     */
+    public function getNews(): ?News
+    {
+        return $this->news;
+    }
+
+    /**
+     * @param News|null $news
+     * @return Comment
+     */
+    public function setNews(?News $news): Comment
+    {
+        $this->news = $news;
 
         return $this;
     }

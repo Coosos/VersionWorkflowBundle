@@ -2,8 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
-use Doctrine\Common\Collections\ArrayCollection;
-use phpDocumentor\Reflection\Types\Array_;
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 
 /**
  * Class News
@@ -13,6 +12,8 @@ use phpDocumentor\Reflection\Types\Array_;
  */
 class News
 {
+    use VersionWorkflowTrait;
+
     /**
      * @var int|null
      */
@@ -29,7 +30,7 @@ class News
     private $content;
 
     /**
-     * @var User
+     * @var User|null
      */
     private $author;
 
@@ -38,10 +39,10 @@ class News
      */
     private $comments;
 
-    public function __construct()
-    {
-        $this->comments = new ArrayCollection();
-    }
+    /**
+     * @var Tag[]|null
+     */
+    private $tags;
 
     /**
      * @return int|null
@@ -101,18 +102,18 @@ class News
     }
 
     /**
-     * @return User
+     * @return User|null
      */
-    public function getAuthor()
+    public function getAuthor(): ?User
     {
         return $this->author;
     }
 
     /**
-     * @param User $author
+     * @param User|null $author
      * @return News
      */
-    public function setAuthor($author): News
+    public function setAuthor(?User $author): News
     {
         $this->author = $author;
 
@@ -122,7 +123,7 @@ class News
     /**
      * @return Comment[]|null
      */
-    public function getComments()
+    public function getComments(): ?array
     {
         return $this->comments;
     }
@@ -131,7 +132,7 @@ class News
      * @param Comment[]|null $comments
      * @return News
      */
-    public function setComments($comments): News
+    public function setComments(?array $comments): News
     {
         $this->comments = $comments;
 
@@ -139,12 +140,20 @@ class News
     }
 
     /**
-     * @param Comment $comment
+     * @return Tag[]|null
+     */
+    public function getTags(): ?array
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param Tag[]|null $tags
      * @return News
      */
-    public function addComments(Comment $comment): News
+    public function setTags(?array $tags): News
     {
-        $this->comments[] = $comment;
+        $this->tags = $tags;
 
         return $this;
     }
