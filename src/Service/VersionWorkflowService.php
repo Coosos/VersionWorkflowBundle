@@ -109,6 +109,7 @@ class VersionWorkflowService
      * @param VersionWorkflow $object
      * @param array $params
      * @return VersionWorkflowTrait
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function transformToObject(VersionWorkflow $object, array $params = [])
     {
