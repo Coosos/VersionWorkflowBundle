@@ -57,16 +57,17 @@ class VersionWorkflowService
 
     /**
      * @param VersionWorkflowTrait|mixed $object
-     * @param string|null                $transition
+     * @param string|null $workflowName
+     * @param string|null $transition
      * @return VersionWorkflowTrait|mixed
      */
-    public function applyTransition($object, $transition = null)
+    public function applyTransition($object, ?string $workflowName, $transition = null)
     {
-        $workflow = $this->workflows->get($object);
+        $workflow = $this->workflows->get($object, $workflowName);
 
         if (is_null($transition)) {
             $marking = $workflow->getDefinition()->getInitialPlace();
-            $setterMethod = $this->classContains->getSetterMethod($object, $this->getMarkingProperty($object));
+            $setterMethod = $this->classContains->getSetterMethod($object, $this->getMarkingProperty($object, $workflowName));
             if ($setterMethod) {
                 $object->{$setterMethod}($marking);
             }
@@ -83,16 +84,17 @@ class VersionWorkflowService
 
     /**
      * @param VersionWorkflowTrait $object
+     * @param string|null $workflowName
      * @param array $params
      * @return VersionWorkflow
      * @throws \ReflectionException
      */
-    public function transformToVersionWorkflowModel($object, $params = [])
+    public function transformToVersionWorkflowModel($object, ?string $workflowName, $params = [])
     {
         $versionWorkflow = new VersionWorkflow();
-        $versionWorkflow->setWorkflowName($this->getWorkflowName($object));
+        $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
         $versionWorkflow->setModelName(get_class($object));
-        $versionWorkflow->setMarking($this->getMarkingValue($object));
+        $versionWorkflow->setMarking($this->getMarkingValue($object, $workflowName));
 
         if ($object->getVersionWorkflow()) {
             $versionWorkflow->setInherit($object->getVersionWorkflow());
@@ -127,33 +129,36 @@ class VersionWorkflowService
 
     /**
      * @param mixed $object
+     * @param string|null $workflowName
      * @return string
      */
-    protected function getMarkingProperty($object)
+    protected function getMarkingProperty($object, ?string $workflowName)
     {
-        $workflow = $this->workflows->get($object);
+        $workflow = $this->workflows->get($object, $workflowName);
 
         return $workflow->getMarkingStore()->getProperty();
     }
 
     /**
      * @param mixed $object
+     * @param string|null $workflowName
      * @return string
      */
-    protected function getWorkflowName($object)
+    protected function getWorkflowName($object, ?string $workflowName)
     {
-        $workflow = $this->workflows->get($object);
+        $workflow = $this->workflows->get($object, $workflowName);
 
         return $workflow->getName();
     }
 
     /**
      * @param mixed $object
+     * @param string|null $workflowName
      * @return null
      */
-    protected function getMarkingValue($object)
+    protected function getMarkingValue($object, ?string $workflowName)
     {
-        $getterMethod = $this->classContains->getGetterMethod($object, $this->getMarkingProperty($object));
+        $getterMethod = $this->classContains->getGetterMethod($object, $this->getMarkingProperty($object, $workflowName));
         if ($getterMethod) {
             return $object->{$getterMethod}();
         }
