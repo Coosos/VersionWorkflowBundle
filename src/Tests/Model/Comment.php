@@ -16,6 +16,11 @@ class Comment
     private $id;
 
     /**
+     * @var News|null
+     */
+    private $news;
+
+    /**
      * @var User|null
      */
     private $user;
@@ -24,6 +29,21 @@ class Comment
      * @var string
      */
     private $content;
+
+    /**
+     * @var \DateTime
+     */
+    private $createdAt;
+
+    /**
+     * Comment constructor.
+     *
+     * @throws \Exception
+     */
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+    }
 
     /**
      * @return int|null
@@ -45,9 +65,28 @@ class Comment
     }
 
     /**
+     * @return News|null
+     */
+    public function getNews()
+    {
+        return $this->news;
+    }
+
+    /**
+     * @param News|null $news
+     * @return Comment
+     */
+    public function setNews($news): Comment
+    {
+        $this->news = $news;
+
+        return $this;
+    }
+
+    /**
      * @return User|null
      */
-    public function getUser(): ?User
+    public function getUser()
     {
         return $this->user;
     }
@@ -56,7 +95,7 @@ class Comment
      * @param User|null $user
      * @return Comment
      */
-    public function setUser(?User $user): Comment
+    public function setUser($user): Comment
     {
         $this->user = $user;
 
@@ -78,6 +117,25 @@ class Comment
     public function setContent(string $content): Comment
     {
         $this->content = $content;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param \DateTime $createdAt
+     * @return Comment
+     */
+    public function setCreatedAt($createdAt): Comment
+    {
+        $this->createdAt = $createdAt;
 
         return $this;
     }
