@@ -45,6 +45,21 @@ class News
     private $tags;
 
     /**
+     * @var \DateTime
+     */
+    private $createdAt;
+
+    /**
+     * News constructor.
+     *
+     * @throws \Exception
+     */
+    public function __construct()
+    {
+        $this->createdAt = new \DateTime();
+    }
+
+    /**
      * @return int|null
      */
     public function getId(): ?int
@@ -154,6 +169,25 @@ class News
     public function setTags(?array $tags): News
     {
         $this->tags = $tags;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTime
+     */
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    /**
+     * @param \DateTime $createdAt
+     * @return News
+     */
+    public function setCreatedAt($createdAt): News
+    {
+        $this->createdAt = $createdAt;
 
         return $this;
     }

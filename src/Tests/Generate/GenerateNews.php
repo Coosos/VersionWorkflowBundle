@@ -2,7 +2,6 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Generate;
 
-use Coosos\VersionWorkflowBundle\Tests\Model\Comment;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use Coosos\VersionWorkflowBundle\Tests\Utils\Random;
 
@@ -19,6 +18,7 @@ class GenerateNews
     /**
      * @param bool $withId
      * @return News
+     * @throws \Exception
      */
     public function generateExample1($withId = false)
     {
@@ -34,6 +34,7 @@ class GenerateNews
     /**
      * @param bool $withId
      * @return News
+     * @throws \Exception
      */
     public function generateExample2($withId = false)
     {
@@ -52,6 +53,7 @@ class GenerateNews
     /**
      * @param bool $withId
      * @return News
+     * @throws \Exception
      */
     public function generateExample3($withId = false)
     {
@@ -66,7 +68,7 @@ class GenerateNews
         $news->setAuthor($generateUser->generate());
 
         $comments = [];
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $comments[] = $generateComment->generate(false, $news, $generateUser->generate());
         }
 
@@ -78,6 +80,7 @@ class GenerateNews
     /**
      * @param bool $withId
      * @return News
+     * @throws \Exception
      */
     public function generateExample4($withId = false)
     {
@@ -92,7 +95,7 @@ class GenerateNews
         $news->setAuthor($author = $generateUser->generate());
 
         $comments = [];
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $user = $generateUser->generate();
             if ($i % 2) {
                 $user = $author;
