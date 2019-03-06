@@ -2,7 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Service;
 
-use Coosos\VersionWorkflowBundle\Model\VersionWorkflow;
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Coosos\VersionWorkflowBundle\Utils\CloneObject;
@@ -86,12 +86,12 @@ class VersionWorkflowService
      * @param VersionWorkflowTrait $object
      * @param string|null $workflowName
      * @param array $params
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      * @throws \ReflectionException
      */
     public function transformToVersionWorkflowModel($object, ?string $workflowName, $params = [])
     {
-        $versionWorkflow = new VersionWorkflow();
+        $versionWorkflow = new VersionWorkflowModel();
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
         $versionWorkflow->setModelName(get_class($object));
         $versionWorkflow->setMarking($this->getMarkingValue($object, $workflowName));
@@ -108,12 +108,12 @@ class VersionWorkflowService
     }
 
     /**
-     * @param VersionWorkflow $object
+     * @param VersionWorkflowModel $object
      * @param array $params
      * @return VersionWorkflowTrait
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function transformToObject(VersionWorkflow $object, array $params = [])
+    public function transformToObject(VersionWorkflowModel $object, array $params = [])
     {
         $entity = $this->serializerService->deserialize(
             $object->getObjectSerialized(),
