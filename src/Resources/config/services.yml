@@ -25,3 +25,7 @@ services:
       - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize,    priority: 1000 }
       - { name: kernel.event_listener, event: coosos.version_workflow.post_deserialize, priority: 1000 }
       - { name: kernel.event_listener, event: coosos.version_workflow.post_normalize,   priority: 1000 }
+
+  Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
+    tags:
+      - { name: doctrine.event_listener, event: loadClassMetadata }

@@ -37,4 +37,33 @@ class ClassContains
 
         return null;
     }
+
+    /**
+     * Return true if the given object use the given trait, false if not
+     *
+     * @param \ReflectionClass|mixed $class
+     * @param string                 $traitName
+     * @param boolean                $isRecursive
+     * @return bool
+     * @throws \ReflectionException
+     */
+    public function hasTrait($class, $traitName, $isRecursive = false)
+    {
+        if (!$class instanceof \ReflectionClass) {
+            $entityClass = get_class($class);
+            $class = new \ReflectionClass($entityClass);
+        }
+
+        if (in_array($traitName, $class->getTraitNames())) {
+            return true;
+        }
+
+        $parentClass = $class->getParentClass();
+
+        if (($isRecursive === false) || ($parentClass === false) || ($parentClass === null)) {
+            return false;
+        }
+
+        return $this->hasTrait($parentClass, $traitName, $isRecursive);
+    }
 }
