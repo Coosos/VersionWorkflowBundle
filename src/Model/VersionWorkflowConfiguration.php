@@ -47,4 +47,16 @@ class VersionWorkflowConfiguration
 
         return false;
     }
+
+    /**
+     * Check if workflow name exist in configuration
+     *
+     * @param string $workflowName
+     *
+     * @return bool
+     */
+    public function hasConfigurationByWorkflowName(string $workflowName)
+    {
+        return isset($this->autoMerge[$workflowName]);
+    }
 }
