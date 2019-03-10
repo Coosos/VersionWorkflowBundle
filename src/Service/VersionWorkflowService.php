@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Service;
 
+use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
@@ -91,7 +92,7 @@ class VersionWorkflowService
      */
     public function transformToVersionWorkflowModel($object, ?string $workflowName, $params = [])
     {
-        $versionWorkflow = new VersionWorkflowModel();
+        $versionWorkflow = new VersionWorkflow();
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
         $versionWorkflow->setModelName(get_class($object));
         $versionWorkflow->setMarking($this->getMarkingValue($object, $workflowName));
@@ -100,9 +101,10 @@ class VersionWorkflowService
             $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
-        $object = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
+        $objectCloned = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
+        $versionWorkflow->setObjectSerialized($this->serializerService->serialize($objectCloned, 'json', $params));
 
-        $versionWorkflow->setObjectSerialized($this->serializerService->serialize($object, 'json', $params));
+        $object->setVersionWorkflow($versionWorkflow);
 
         return $versionWorkflow;
     }
