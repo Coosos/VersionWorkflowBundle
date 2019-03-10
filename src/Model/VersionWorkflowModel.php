@@ -46,6 +46,11 @@ class VersionWorkflowModel
     protected $objectDeserialized;
 
     /**
+     * @var mixed|null
+     */
+    protected $originalObject;
+
+    /**
      * @return VersionWorkflowModel|null
      */
     public function getInherit(): ?VersionWorkflowModel
@@ -174,6 +179,25 @@ class VersionWorkflowModel
     public function setObjectDeserialized($objectDeserialized): VersionWorkflowModel
     {
         $this->objectDeserialized = $objectDeserialized;
+
+        return $this;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getOriginalObject()
+    {
+        return $this->originalObject;
+    }
+
+    /**
+     * @param mixed|null $originalObject
+     * @return VersionWorkflowModel
+     */
+    public function setOriginalObject($originalObject): VersionWorkflowModel
+    {
+        $this->originalObject = $originalObject;
 
         return $this;
     }
