@@ -31,6 +31,7 @@ class VersionWorkflowService
      * @var ClassContains
      */
     private $classContains;
+
     /**
      * @var CloneObject
      */
@@ -84,9 +85,12 @@ class VersionWorkflowService
     }
 
     /**
-     * @param VersionWorkflowTrait $object
-     * @param string|null $workflowName
-     * @param array $params
+     * Transform model to version workflow model
+     *
+     * @param VersionWorkflowTrait|object $object
+     * @param string|null                 $workflowName
+     * @param array                       $params
+     *
      * @return VersionWorkflowModel
      * @throws \ReflectionException
      */
@@ -110,12 +114,35 @@ class VersionWorkflowService
     }
 
     /**
-     * @param VersionWorkflowModel $object
+     * Transform VersionWorkflowModel list to deserialized entity
+     *
+     * @param VersionWorkflowModel[] $versionWorkflows
      * @param array $params
+     *
+     * @return array
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function transformVersionWorkflowListToObject(array $versionWorkflows, array $params = [])
+    {
+        $objects = [];
+
+        foreach ($versionWorkflows as $versionWorkflow) {
+            $objects[] = $this->transformToObject($versionWorkflow, $params);
+        }
+
+        return $objects;
+    }
+
+    /**
+     * Transform VersionWorkflowModel to deserialized entity
+     *
+     * @param VersionWorkflowModel|object $object
+     * @param array                       $params
+     *
      * @return VersionWorkflowTrait
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function transformToObject(VersionWorkflowModel $object, array $params = [])
+    public function transformToObject($object, array $params = [])
     {
         $entity = $this->serializerService->deserialize(
             $object->getObjectSerialized(),
@@ -130,8 +157,9 @@ class VersionWorkflowService
     }
 
     /**
-     * @param mixed $object
+     * @param mixed       $object
      * @param string|null $workflowName
+     *
      * @return string
      */
     protected function getMarkingProperty($object, ?string $workflowName)
@@ -142,8 +170,9 @@ class VersionWorkflowService
     }
 
     /**
-     * @param mixed $object
+     * @param mixed       $object
      * @param string|null $workflowName
+     *
      * @return string
      */
     protected function getWorkflowName($object, ?string $workflowName)
@@ -154,13 +183,18 @@ class VersionWorkflowService
     }
 
     /**
-     * @param mixed $object
+     * @param mixed       $object
      * @param string|null $workflowName
+     *
      * @return null
      */
     protected function getMarkingValue($object, ?string $workflowName)
     {
-        $getterMethod = $this->classContains->getGetterMethod($object, $this->getMarkingProperty($object, $workflowName));
+        $getterMethod = $this->classContains->getGetterMethod(
+            $object,
+            $this->getMarkingProperty($object, $workflowName)
+        );
+
         if ($getterMethod) {
             return $object->{$getterMethod}();
         }
