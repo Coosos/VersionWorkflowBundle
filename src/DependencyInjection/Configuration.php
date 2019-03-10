@@ -20,6 +20,18 @@ class Configuration implements ConfigurationInterface
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('coosos_version_workflow');
+        $rootNode
+            ->children()
+                ->arrayNode('workflows')
+                    ->arrayPrototype()
+                        ->children()
+                            ->arrayNode('auto_merge')
+                                ->scalarPrototype()
+                            ->end()
+                        ->end()
+                     ->end()
+                ->end()
+            ->end();
 
         return $treeBuilder;
     }
