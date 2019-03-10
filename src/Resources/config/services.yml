@@ -29,3 +29,11 @@ services:
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }
+
+  Coosos\VersionWorkflowBundle\EventListener\Doctrine\PreFlushListener:
+    tags:
+      - { name: doctrine.event_listener, event: preFlush }
+
+  Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
+    tags:
+      - { name: doctrine.event_listener, event: onFlush }
