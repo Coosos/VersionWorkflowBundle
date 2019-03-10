@@ -8,56 +8,56 @@ namespace Coosos\VersionWorkflowBundle\Model;
  * @package Coosos\VersionWorkflowBundle\Model
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class VersionWorkflow
+class VersionWorkflowModel
 {
     /**
-     * @var VersionWorkflow|null
+     * @var VersionWorkflowModel|null
      */
-    private $inherit;
+    protected $inherit;
 
     /**
      * @var int|null
      */
-    private $id;
+    protected $id;
 
     /**
      * @var string
      */
-    private $workflowName;
+    protected $workflowName;
 
     /**
      * @var string
      */
-    private $modelName;
+    protected $modelName;
 
     /**
      * @var string|null
      */
-    private $marking;
+    protected $marking;
 
     /**
      * @var string|null
      */
-    private $objectSerialized;
+    protected $objectSerialized;
 
     /**
      * @var mixed|null
      */
-    private $objectDeserialized;
+    protected $objectDeserialized;
 
     /**
-     * @return VersionWorkflow|null
+     * @return VersionWorkflowModel|null
      */
-    public function getInherit(): ?VersionWorkflow
+    public function getInherit(): ?VersionWorkflowModel
     {
         return $this->inherit;
     }
 
     /**
-     * @param VersionWorkflow|null $inherit
-     * @return VersionWorkflow
+     * @param VersionWorkflowModel|null $inherit
+     * @return VersionWorkflowModel
      */
-    public function setInherit(?VersionWorkflow $inherit): VersionWorkflow
+    public function setInherit(?VersionWorkflowModel $inherit): VersionWorkflowModel
     {
         $this->inherit = $inherit;
 
@@ -74,9 +74,9 @@ class VersionWorkflow
 
     /**
      * @param int|null $id
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setId(?int $id): VersionWorkflow
+    public function setId(?int $id): VersionWorkflowModel
     {
         $this->id = $id;
 
@@ -93,9 +93,9 @@ class VersionWorkflow
 
     /**
      * @param string $workflowName
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setWorkflowName(string $workflowName): VersionWorkflow
+    public function setWorkflowName(string $workflowName): VersionWorkflowModel
     {
         $this->workflowName = $workflowName;
 
@@ -112,9 +112,9 @@ class VersionWorkflow
 
     /**
      * @param string $modelName
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setModelName(string $modelName): VersionWorkflow
+    public function setModelName(string $modelName): VersionWorkflowModel
     {
         $this->modelName = $modelName;
 
@@ -131,9 +131,9 @@ class VersionWorkflow
 
     /**
      * @param string|null $marking
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setMarking(?string $marking): VersionWorkflow
+    public function setMarking(?string $marking): VersionWorkflowModel
     {
         $this->marking = $marking;
 
@@ -150,9 +150,9 @@ class VersionWorkflow
 
     /**
      * @param string|null $objectSerialized
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setObjectSerialized(?string $objectSerialized): VersionWorkflow
+    public function setObjectSerialized(?string $objectSerialized): VersionWorkflowModel
     {
         $this->objectSerialized = $objectSerialized;
 
@@ -169,9 +169,9 @@ class VersionWorkflow
 
     /**
      * @param mixed|null $objectDeserialized
-     * @return VersionWorkflow
+     * @return VersionWorkflowModel
      */
-    public function setObjectDeserialized($objectDeserialized): VersionWorkflow
+    public function setObjectDeserialized($objectDeserialized): VersionWorkflowModel
     {
         $this->objectDeserialized = $objectDeserialized;
 

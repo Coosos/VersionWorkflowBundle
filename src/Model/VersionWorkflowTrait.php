@@ -10,12 +10,12 @@ namespace Coosos\VersionWorkflowBundle\Model;
 trait VersionWorkflowTrait
 {
     /**
-     * @var VersionWorkflow|null
+     * @var VersionWorkflowModel|null
      */
     protected $versionWorkflow;
 
     /**
-     * @return VersionWorkflow|null
+     * @return VersionWorkflowModel|null
      */
     public function getVersionWorkflow()
     {
@@ -23,10 +23,10 @@ trait VersionWorkflowTrait
     }
 
     /**
-     * @param VersionWorkflow|null $versionWorkflow
+     * @param VersionWorkflowModel|null $versionWorkflow
      * @return VersionWorkflowTrait
      */
-    public function setVersionWorkflow(?VersionWorkflow $versionWorkflow)
+    public function setVersionWorkflow(?VersionWorkflowModel $versionWorkflow)
     {
         $this->versionWorkflow = $versionWorkflow;
 
