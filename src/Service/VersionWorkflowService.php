@@ -100,6 +100,7 @@ class VersionWorkflowService
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
         $versionWorkflow->setModelName(get_class($object));
         $versionWorkflow->setMarking($this->getMarkingValue($object, $workflowName));
+        $versionWorkflow->setOriginalObject($object);
 
         if ($object->getVersionWorkflow()) {
             $versionWorkflow->setInherit($object->getVersionWorkflow());
@@ -140,7 +141,7 @@ class VersionWorkflowService
      * @param VersionWorkflowModel|object $object
      * @param array                       $params
      *
-     * @return VersionWorkflowTrait
+     * @return VersionWorkflowTrait|mixed
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function transformToObject($object, array $params = [])
@@ -187,7 +188,7 @@ class VersionWorkflowService
      * @param mixed       $object
      * @param string|null $workflowName
      *
-     * @return null
+     * @return mixed|null
      */
     protected function getMarkingValue($object, ?string $workflowName)
     {
