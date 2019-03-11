@@ -20,6 +20,11 @@ trait VersionWorkflowTrait
     protected $workflowName;
 
     /**
+     * @var bool
+     */
+    protected $versionWorkflowFakeEntity = false;
+
+    /**
      * @return VersionWorkflowModel|null
      */
     public function getVersionWorkflow()
@@ -53,6 +58,25 @@ trait VersionWorkflowTrait
     public function setWorkflowName($workflowName)
     {
         $this->workflowName = $workflowName;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isVersionWorkflowFakeEntity(): bool
+    {
+        return $this->versionWorkflowFakeEntity;
+    }
+
+    /**
+     * @param bool $versionWorkflowFakeEntity
+     * @return VersionWorkflowTrait
+     */
+    public function setVersionWorkflowFakeEntity(bool $versionWorkflowFakeEntity)
+    {
+        $this->versionWorkflowFakeEntity = $versionWorkflowFakeEntity;
 
         return $this;
     }
