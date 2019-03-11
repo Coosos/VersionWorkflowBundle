@@ -69,7 +69,8 @@ class PreFlushListener
                 /** @var VersionWorkflowTrait $originalObject */
                 $originalObject = $insert->getOriginalObject();
                 if ($originalObject->isVersionWorkflowFakeEntity()) {
-                    $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
+                    $t = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
+                    dump($t);
                 }
             }
 
@@ -90,6 +91,10 @@ class PreFlushListener
      */
     protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $onlyId = false)
     {
+        if (is_null($model)) {
+            return $model;
+        }
+
         $classMetadata = $entityManager->getClassMetadata(get_class($model));
 
         $identifier = [];
