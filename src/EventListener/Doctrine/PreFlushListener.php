@@ -10,6 +10,7 @@ use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PreFlushEventArgs;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 /**
@@ -96,14 +97,7 @@ class PreFlushListener
         }
 
         $classMetadata = $entityManager->getClassMetadata(get_class($model));
-
-        $identifier = [];
-        foreach ($classMetadata->getIdentifier() as $identifierMetadata) {
-            $getterMethod = $this->classContains->getGetterMethod($model, $identifierMetadata);
-            if ($getterMethod) {
-                $identifier[$identifierMetadata] = $model->{$getterMethod}();
-            }
-        }
+        $identifier = $this->getIdentifiers($classMetadata, $model);
 
         $originalEntity = $entityManager->getRepository($classMetadata->getName())->findOneBy($identifier);
         $originalEntity = $originalEntity ?? $model;
@@ -112,24 +106,28 @@ class PreFlushListener
             return $originalEntity;
         }
 
-        $metadataFields = array_filter($classMetadata->getFieldNames(), function ($val) use ($identifier) {
-            return !in_array($val, array_keys($identifier));
-        });
+        $this->updateSimpleMapping($classMetadata, $identifier, $originalEntity, $model);
+        $this->updateRelationMapping($entityManager, $originalEntity, $model);
 
-        foreach ($metadataFields as $metadataField) {
-            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
-            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
-            if ($getterMethod && $setterMethod) {
-                $originalEntity->{$setterMethod}($model->{$getterMethod}());
-            }
-        }
+        return $originalEntity;
+    }
+
+    /**
+     * @param EntityManagerInterface $entityManager
+     * @param mixed $originalEntity
+     * @param mixed $model
+     * @throws \ReflectionException
+     */
+    protected function updateRelationMapping($entityManager, $originalEntity, $model)
+    {
+        $classMetadata = $entityManager->getClassMetadata(get_class($model));
 
         foreach ($classMetadata->getAssociationMappings() as $metadataField => $associationMapping) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
             $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
 
             if (($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
-                || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
+                    || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
                 && $setterMethod) {
                 $reflectionProperty = new \ReflectionProperty(get_class($originalEntity), $metadataField);
                 $onlyId = $this->annotationReader->getPropertyAnnotation($reflectionProperty, OnlyId::class);
@@ -148,7 +146,44 @@ class PreFlushListener
              * TODO : Check insert & delete
              */
         }
+    }
 
-        return $originalEntity;
+    /**
+     * @param ClassMetadata $classMetadata
+     * @param array         $identifiers
+     * @param mixed         $originalEntity
+     * @param mixed         $model
+     */
+    protected function updateSimpleMapping($classMetadata, $identifiers, $originalEntity, $model)
+    {
+        $metadataFields = array_filter($classMetadata->getFieldNames(), function ($val) use ($identifiers) {
+            return !in_array($val, array_keys($identifiers));
+        });
+
+        foreach ($metadataFields as $metadataField) {
+            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
+            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+            if ($getterMethod && $setterMethod) {
+                $originalEntity->{$setterMethod}($model->{$getterMethod}());
+            }
+        }
+    }
+
+    /**
+     * @param ClassMetadata $classMetadata
+     * @param mixed         $model
+     * @return array
+     */
+    protected function getIdentifiers($classMetadata, $model)
+    {
+        $identifier = [];
+        foreach ($classMetadata->getIdentifier() as $identifierMetadata) {
+            $getterMethod = $this->classContains->getGetterMethod($model, $identifierMetadata);
+            if ($getterMethod) {
+                $identifier[$identifierMetadata] = $model->{$getterMethod}();
+            }
+        }
+
+        return $identifier;
     }
 }
