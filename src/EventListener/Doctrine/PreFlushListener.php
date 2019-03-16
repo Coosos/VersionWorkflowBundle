@@ -16,7 +16,6 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 /**
  * Class PreFlushListener
- *
  * @package Coosos\VersionWorkflowBundle\EventListener\Doctrine
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
@@ -39,8 +38,8 @@ class PreFlushListener
      * PreFlushListener constructor.
      *
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
-     * @param ClassContains $classContains
-     * @param Reader $annotationReader
+     * @param ClassContains                $classContains
+     * @param Reader                       $annotationReader
      */
     public function __construct(
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
@@ -54,6 +53,7 @@ class PreFlushListener
 
     /**
      * @param PreFlushEventArgs $args
+     *
      * @throws \Doctrine\ORM\ORMException
      * @throws \ReflectionException
      */
@@ -87,6 +87,7 @@ class PreFlushListener
      * @param EntityManagerInterface $entityManager
      * @param VersionWorkflowTrait   $model
      * @param array                  $annotations
+     *
      * @return object|null
      * @throws \ReflectionException
      */
@@ -114,8 +115,9 @@ class PreFlushListener
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param mixed $originalEntity
-     * @param mixed $model
+     * @param mixed                  $originalEntity
+     * @param mixed                  $model
+     *
      * @throws \ReflectionException
      */
     protected function updateRelationMapping($entityManager, $originalEntity, $model)
@@ -131,39 +133,114 @@ class PreFlushListener
                 continue;
             }
 
-            if (
-                ($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
-                    || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
-                && $setterMethod
-            ) {
-                $originalEntity->{$setterMethod}(
-                    $this->linkFakeModelToDoctrineRecursive(
-                        $entityManager,
-                        $model->{$getterMethod}(),
-                        $annotationsResults
-                    )
-                );
+            $parseSingle = $this->parseSingleRelation(
+                $originalEntity,
+                $model,
+                $entityManager,
+                $metadataField,
+                $associationMapping
+            );
 
+            if ($parseSingle) {
                 continue;
             }
 
-            $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
+            $parseList = $this->parseListRelation(
+                $originalEntity,
+                $model,
+                $entityManager,
+                $metadataField,
+                $associationMapping,
+                $classMetadata
+            );
 
-            // Remove
-            if (!empty($compare['removed'])) {
-                $this->parseListForRemoveElement(
-                    $originalEntity,
-                    $classMetadata,
-                    $metadataField,
-                    $compare['removed']
-                );
+            if ($parseList) {
+                continue;
             }
-
-            /**
-             * TODO : Use for array
-             * TODO : Check insert & updated
-             */
         }
+    }
+
+    /**
+     * @param mixed                  $originalEntity
+     * @param mixed                  $model
+     * @param EntityManagerInterface $entityManager
+     * @param string                 $metadataField
+     * @param array                  $associationMapping
+     * @param ClassMetadata          $classMetadata
+     *
+     * @return bool
+     * @throws \ReflectionException
+     */
+    protected function parseListRelation(
+        $originalEntity,
+        $model,
+        $entityManager,
+        $metadataField,
+        $associationMapping,
+        $classMetadata
+    ) {
+        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
+        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+        $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
+
+        $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
+
+        // Remove
+        if (!empty($compare['removed'])) {
+            $this->parseListForRemoveElement(
+                $originalEntity,
+                $classMetadata,
+                $metadataField,
+                $compare['removed']
+            );
+        }
+
+        /**
+         * TODO : Use for array
+         * TODO : Check insert & updated
+         */
+
+        return true;
+    }
+
+    /**
+     * @param $originalEntity
+     * @param $model
+     * @param $entityManager
+     * @param $metadataField
+     * @param $associationMapping
+     *
+     * @return bool
+     * @throws \ReflectionException
+     */
+    protected function parseSingleRelation(
+        $originalEntity,
+        $model,
+        $entityManager,
+        $metadataField,
+        $associationMapping
+    ) {
+        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
+        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+        $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
+
+        if (
+            ($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
+                || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
+            && $setterMethod
+        ) {
+            $originalEntity->{$setterMethod}(
+                $this->linkFakeModelToDoctrineRecursive(
+                    $entityManager,
+                    $model->{$getterMethod}(),
+                    $annotationsResults
+                )
+            );
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -190,10 +267,11 @@ class PreFlushListener
     }
 
     /**
-     * @param mixed $originalEntity
-     * @param mixed $model
-     * @param string $metadataField
+     * @param mixed         $originalEntity
+     * @param mixed         $model
+     * @param string        $metadataField
      * @param ClassMetadata $classMetadata
+     *
      * @return array
      */
     protected function compareRelationList($originalEntity, $model, $metadataField, $classMetadata)
@@ -245,6 +323,7 @@ class PreFlushListener
      * @param $classMetadata
      * @param $firstObject
      * @param $secondObject
+     *
      * @return bool
      */
     protected function compareIdentifierModel($classMetadata, $firstObject, $secondObject)
@@ -258,6 +337,7 @@ class PreFlushListener
     /**
      * @param $entityClass
      * @param $field
+     *
      * @return array
      * @throws \ReflectionException
      */
@@ -275,9 +355,10 @@ class PreFlushListener
 
     /**
      * @param ClassMetadata $classMetadata
-     * @param array $identifiers
-     * @param mixed $originalEntity
-     * @param mixed $model
+     * @param array         $identifiers
+     * @param mixed         $originalEntity
+     * @param mixed         $model
+     *
      * @throws \ReflectionException
      */
     protected function updateSimpleMapping($classMetadata, $identifiers, $originalEntity, $model)
@@ -289,7 +370,7 @@ class PreFlushListener
         foreach ($metadataFields as $metadataField) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
             $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
-            $annotations  = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
+            $annotations = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
 
             if (isset($annotations['ignoreChange']) && $annotations['ignoreChange']) {
                 continue;
@@ -304,6 +385,7 @@ class PreFlushListener
     /**
      * @param ClassMetadata $classMetadata
      * @param mixed         $model
+     *
      * @return array
      */
     protected function getIdentifiers($classMetadata, $model)
