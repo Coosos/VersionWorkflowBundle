@@ -105,7 +105,7 @@ class OnFlushListener
                             }
                         }
 
-                        if (!$autoMerge) {
+                        if (!$autoMerge || $scheduledEntity->isVersionWorkflowFakeEntity()) {
                             $this->detachRecursive($args, $scheduledEntity);
                         }
                     }
