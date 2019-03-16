@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 
+use Coosos\VersionWorkflowBundle\Annotation\IgnoreChange;
 use Coosos\VersionWorkflowBundle\Annotation\OnlyId;
 use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
@@ -70,6 +71,7 @@ class PreFlushListener
                 /** @var VersionWorkflowTrait $originalObject */
                 $originalObject = $insert->getOriginalObject();
                 if ($originalObject->isVersionWorkflowFakeEntity()) {
+                    dump($originalObject);
                     $t = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
                     dump($t);
                 }
@@ -78,7 +80,7 @@ class PreFlushListener
             $insert->setOriginalObject(null);
         }
 
-        dump('OK');
+        dump('OKdd');
         dump($args->getEntityManager()->getUnitOfWork());
         die;
     }
@@ -86,11 +88,11 @@ class PreFlushListener
     /**
      * @param EntityManagerInterface $entityManager
      * @param VersionWorkflowTrait   $model
-     * @param bool                   $onlyId
+     * @param array                  $annotations
      * @return object|null
      * @throws \ReflectionException
      */
-    protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $onlyId = false)
+    protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $annotations = [])
     {
         if (is_null($model)) {
             return $model;
@@ -102,7 +104,7 @@ class PreFlushListener
         $originalEntity = $entityManager->getRepository($classMetadata->getName())->findOneBy($identifier);
         $originalEntity = $originalEntity ?? $model;
 
-        if ($onlyId) {
+        if (!empty($annotations) && isset($annotations['onlyId']) && $annotations['onlyId']) {
             return $originalEntity;
         }
 
@@ -125,18 +127,22 @@ class PreFlushListener
         foreach ($classMetadata->getAssociationMappings() as $metadataField => $associationMapping) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
             $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+            $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
 
-            if (($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
+            if (isset($annotationsResults['ignoreChange']) || $annotationsResults['ignoreChange']) {
+                continue;
+            }
+
+            if (
+                ($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
                     || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
-                && $setterMethod) {
-                $reflectionProperty = new \ReflectionProperty(get_class($originalEntity), $metadataField);
-                $onlyId = $this->annotationReader->getPropertyAnnotation($reflectionProperty, OnlyId::class);
-
+                && $setterMethod
+            ) {
                 $originalEntity->{$setterMethod}(
                     $this->linkFakeModelToDoctrineRecursive(
                         $entityManager,
                         $model->{$getterMethod}(),
-                        !is_null($onlyId)
+                        $annotationsResults
                     )
                 );
             }
@@ -144,15 +150,35 @@ class PreFlushListener
             /**
              * TODO : Use for array
              * TODO : Check insert & delete
+             * TODO : Check ignore change
              */
         }
     }
 
     /**
+     * @param $entityClass
+     * @param $field
+     * @return array
+     * @throws \ReflectionException
+     */
+    protected function getAnnotationResults($entityClass, $field)
+    {
+        $reflectionProperty = new \ReflectionProperty($entityClass, $field);
+        $onlyId = $this->annotationReader->getPropertyAnnotation($reflectionProperty, OnlyId::class);
+        $ignoreChange = $this->annotationReader->getPropertyAnnotation($reflectionProperty, IgnoreChange::class);
+
+        return [
+            'onlyId' => !is_null($onlyId),
+            'ignoreChange' => !is_null($ignoreChange),
+        ];
+    }
+
+    /**
      * @param ClassMetadata $classMetadata
-     * @param array         $identifiers
-     * @param mixed         $originalEntity
-     * @param mixed         $model
+     * @param array $identifiers
+     * @param mixed $originalEntity
+     * @param mixed $model
+     * @throws \ReflectionException
      */
     protected function updateSimpleMapping($classMetadata, $identifiers, $originalEntity, $model)
     {
@@ -163,6 +189,12 @@ class PreFlushListener
         foreach ($metadataFields as $metadataField) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
             $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+            $annotations  = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
+
+            if (isset($annotations['ignoreChange']) && $annotations['ignoreChange']) {
+                continue;
+            }
+
             if ($getterMethod && $setterMethod) {
                 $originalEntity->{$setterMethod}($model->{$getterMethod}());
             }
