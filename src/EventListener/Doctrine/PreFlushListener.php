@@ -149,13 +149,47 @@ class PreFlushListener
 
             $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
 
+            // Remove
+            if (!empty($compare['removed'])) {
+                $this->parseListForRemoveElement(
+                    $originalEntity,
+                    $classMetadata,
+                    $metadataField,
+                    $compare['removed']
+                );
+            }
+
+            dump($originalEntity);
             dump($compare);
 
             /**
              * TODO : Use for array
-             * TODO : Check insert & delete
+             * TODO : Check insert & updated
              */
         }
+    }
+
+    /**
+     * @param $originalEntity
+     * @param $classMetadata
+     * @param $metadataField
+     * @param $removeIdentifierList
+     */
+    protected function parseListForRemoveElement($originalEntity, $classMetadata, $metadataField, $removeIdentifierList)
+    {
+        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
+        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+
+        $list = $originalEntity->{$getterMethod}();
+        foreach ($list as $key => $item) {
+            foreach ($removeIdentifierList as $identifiers) {
+                if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
+                    unset($list[$key]);
+                }
+            }
+        }
+
+        $originalEntity->{$setterMethod}($list);
     }
 
     /**
@@ -277,14 +311,6 @@ class PreFlushListener
      */
     protected function getIdentifiers($classMetadata, $model)
     {
-        $identifier = [];
-        foreach ($classMetadata->getIdentifier() as $identifierMetadata) {
-            $getterMethod = $this->classContains->getGetterMethod($model, $identifierMetadata);
-            if ($getterMethod) {
-                $identifier[$identifierMetadata] = $model->{$getterMethod}();
-            }
-        }
-
-        return $identifier;
+        return $this->classContains->getValueByArrayAttribute($model, $classMetadata->getIdentifier());
     }
 }
