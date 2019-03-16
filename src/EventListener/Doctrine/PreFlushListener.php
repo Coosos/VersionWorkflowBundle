@@ -24,15 +24,22 @@ class PreFlushListener
     /**
      * @var VersionWorkflowConfiguration
      */
-    private $versionWorkflowConfiguration;
+    protected $versionWorkflowConfiguration;
+
     /**
      * @var ClassContains
      */
-    private $classContains;
+    protected $classContains;
+
     /**
      * @var Reader
      */
-    private $annotationReader;
+    protected $annotationReader;
+
+    /**
+     * @var array
+     */
+    protected $originalObjectByModelHash;
 
     /**
      * PreFlushListener constructor.
@@ -49,6 +56,7 @@ class PreFlushListener
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->classContains = $classContains;
         $this->annotationReader = $annotationReader;
+        $this->originalObjectByModelHash = [];
     }
 
     /**
@@ -97,11 +105,17 @@ class PreFlushListener
             return $model;
         }
 
+        if (in_array(spl_object_hash($model), array_keys($this->originalObjectByModelHash))) {
+            return $this->originalObjectByModelHash[spl_object_hash($model)];
+        }
+
         $classMetadata = $entityManager->getClassMetadata(get_class($model));
         $identifier = $this->getIdentifiers($classMetadata, $model);
 
         $originalEntity = $entityManager->getRepository($classMetadata->getName())->findOneBy($identifier);
         $originalEntity = $originalEntity ?? $model;
+
+        $this->originalObjectByModelHash[spl_object_hash($model)] = $originalEntity;
 
         if (!empty($annotations) && isset($annotations['onlyId']) && $annotations['onlyId']) {
             return $originalEntity;
@@ -125,8 +139,6 @@ class PreFlushListener
         $classMetadata = $entityManager->getClassMetadata(get_class($model));
 
         foreach ($classMetadata->getAssociationMappings() as $metadataField => $associationMapping) {
-            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
-            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
             $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
 
             if (isset($annotationsResults['ignoreChange']) && $annotationsResults['ignoreChange']) {
@@ -185,22 +197,70 @@ class PreFlushListener
 
         $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
 
-        // Remove
-        if (!empty($compare['removed'])) {
-            $this->parseListForRemoveElement(
-                $originalEntity,
-                $classMetadata,
-                $metadataField,
-                $compare['removed']
-            );
-        }
+        $this->parseRemoveElementFromList($originalEntity, $compare, $classMetadata, $metadataField);
+        $this->parseAddElementFromList($originalEntity, $compare, $entityManager, $metadataField);
 
+        dump($this->originalObjectByModelHash);
+        dump($originalEntity);
         /**
          * TODO : Use for array
          * TODO : Check insert & updated
          */
 
         return true;
+    }
+
+    /**
+     * @param mixed                  $originalEntity
+     * @param array                  $compare
+     * @param EntityManagerInterface $entityManager
+     * @param string                 $field
+     *
+     * @throws \ReflectionException
+     */
+    protected function parseAddElementFromList($originalEntity, $compare, $entityManager, $field)
+    {
+        if (!empty($compare['added'])) {
+            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
+            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $field);
+            $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $field);
+
+            $originalEntityList = $originalEntity->{$getterMethod}();
+            foreach ($compare['added'] as $key => $item) {
+                $originalEntityList[$key] = $this->linkFakeModelToDoctrineRecursive(
+                    $entityManager,
+                    $item,
+                    $annotationsResults
+                );
+            }
+
+            $originalEntity->{$setterMethod}($originalEntityList);
+        }
+    }
+
+    /**
+     * @param mixed         $originalEntity
+     * @param array         $compare
+     * @param ClassMetadata $classMetadata
+     * @param string        $field
+     */
+    protected function parseRemoveElementFromList($originalEntity, $compare, $classMetadata, $field)
+    {
+        if (!empty($compare['removed'])) {
+            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
+            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $field);
+
+            $list = $originalEntity->{$getterMethod}();
+            foreach ($list as $key => $item) {
+                foreach ($compare['removed'] as $identifiers) {
+                    if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
+                        unset($list[$key]);
+                    }
+                }
+            }
+
+            $originalEntity->{$setterMethod}($list);
+        }
     }
 
     /**
@@ -241,29 +301,6 @@ class PreFlushListener
         }
 
         return false;
-    }
-
-    /**
-     * @param $originalEntity
-     * @param $classMetadata
-     * @param $metadataField
-     * @param $removeIdentifierList
-     */
-    protected function parseListForRemoveElement($originalEntity, $classMetadata, $metadataField, $removeIdentifierList)
-    {
-        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
-        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
-
-        $list = $originalEntity->{$getterMethod}();
-        foreach ($list as $key => $item) {
-            foreach ($removeIdentifierList as $identifiers) {
-                if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
-                    unset($list[$key]);
-                }
-            }
-        }
-
-        $originalEntity->{$setterMethod}($list);
     }
 
     /**
