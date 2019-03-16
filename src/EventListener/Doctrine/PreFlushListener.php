@@ -71,9 +71,7 @@ class PreFlushListener
                 /** @var VersionWorkflowTrait $originalObject */
                 $originalObject = $insert->getOriginalObject();
                 if ($originalObject->isVersionWorkflowFakeEntity()) {
-                    dump($originalObject);
                     $t = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
-                    dump($t);
                 }
             }
 
@@ -129,7 +127,7 @@ class PreFlushListener
             $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
             $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
 
-            if (isset($annotationsResults['ignoreChange']) || $annotationsResults['ignoreChange']) {
+            if (isset($annotationsResults['ignoreChange']) && $annotationsResults['ignoreChange']) {
                 continue;
             }
 
@@ -149,7 +147,9 @@ class PreFlushListener
                 continue;
             }
 
-            $compare = $this->compareRelationList($originalEntity, $model, $metadataField);
+            $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
+
+            dump($compare);
 
             /**
              * TODO : Use for array
@@ -161,29 +161,67 @@ class PreFlushListener
     /**
      * @param mixed $originalEntity
      * @param mixed $model
-     * @param string $field
+     * @param string $metadataField
+     * @param ClassMetadata $classMetadata
      * @return array
      */
-    protected function compareRelationList($originalEntity, $model, $field)
+    protected function compareRelationList($originalEntity, $model, $metadataField, $classMetadata)
     {
-        $results = [];
+        $results = [
+            'added' => [],
+            'updated' => [],
+            'removed' => [],
+        ];
 
-        /*
-         while on model to check added & present
-         and while model, while on originalEntity to check removed element
-         */
+        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
 
-        /*
-        TODO
-        [
-            'added' => [[...],[...]]
-            'present' => [[...],[...]]
-            'removed' => [[...],[...]]
-        ]
+        foreach ($model->{$getterMethod}() as $modelKey => $subModel) {
+            $exist = false;
+            foreach ($originalEntity->{$getterMethod}() as $subOriginalModel) {
+                if ($this->compareIdentifierModel($classMetadata, $subModel, $subOriginalModel)) {
+                    $exist = true;
 
-         */
+                    $results['updated'][$modelKey] = $this->getIdentifiers($classMetadata, $subModel);
+
+                    break;
+                }
+            }
+
+            if (!$exist) {
+                $results['added'][$modelKey] = $subModel;
+            }
+        }
+
+        foreach ($originalEntity->{$getterMethod}() as $subOriginalModel) {
+            $exist = false;
+            foreach ($results['updated'] as $result) {
+                if ($result == $this->getIdentifiers($classMetadata, $subOriginalModel)) {
+                    $exist = true;
+
+                    break;
+                }
+            }
+
+            if (!$exist) {
+                $results['removed'][] = $this->getIdentifiers($classMetadata, $subOriginalModel);
+            }
+        }
 
         return $results;
+    }
+
+    /**
+     * @param $classMetadata
+     * @param $firstObject
+     * @param $secondObject
+     * @return bool
+     */
+    protected function compareIdentifierModel($classMetadata, $firstObject, $secondObject)
+    {
+        $firstObjectIdentifier = $this->getIdentifiers($classMetadata, $firstObject);
+        $secondObjectIdentifier = $this->getIdentifiers($classMetadata, $secondObject);
+
+        return $firstObjectIdentifier == $secondObjectIdentifier;
     }
 
     /**
