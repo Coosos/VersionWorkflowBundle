@@ -145,14 +145,45 @@ class PreFlushListener
                         $annotationsResults
                     )
                 );
+
+                continue;
             }
+
+            $compare = $this->compareRelationList($originalEntity, $model, $metadataField);
 
             /**
              * TODO : Use for array
              * TODO : Check insert & delete
-             * TODO : Check ignore change
              */
         }
+    }
+
+    /**
+     * @param mixed $originalEntity
+     * @param mixed $model
+     * @param string $field
+     * @return array
+     */
+    protected function compareRelationList($originalEntity, $model, $field)
+    {
+        $results = [];
+
+        /*
+         while on model to check added & present
+         and while model, while on originalEntity to check removed element
+         */
+
+        /*
+        TODO
+        [
+            'added' => [[...],[...]]
+            'present' => [[...],[...]]
+            'removed' => [[...],[...]]
+        ]
+
+         */
+
+        return $results;
     }
 
     /**
