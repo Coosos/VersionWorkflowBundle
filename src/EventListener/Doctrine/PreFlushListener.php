@@ -159,9 +159,6 @@ class PreFlushListener
                 );
             }
 
-            dump($originalEntity);
-            dump($compare);
-
             /**
              * TODO : Use for array
              * TODO : Check insert & updated
