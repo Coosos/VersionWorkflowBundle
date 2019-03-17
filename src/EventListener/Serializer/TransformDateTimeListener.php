@@ -62,15 +62,17 @@ class TransformDateTimeListener
             return $reflector->newInstanceArgs($data['__construct']);
         }
 
-        foreach ($data as $attr => $value) {
-            if (is_array($value) && isset($value['__class_name'])) {
-                $data[$attr] = $this->transformStringToDateTimeRecursive($value);
-            } elseif (is_array($value) && !isset($value['__class_name'])) {
-                foreach ($value as $key => $element) {
-                    $value[$key] = $this->transformStringToDateTimeRecursive($element);
-                }
+        if (is_array($data)) {
+            foreach ($data as $attr => $value) {
+                if (is_array($value) && isset($value['__class_name'])) {
+                    $data[$attr] = $this->transformStringToDateTimeRecursive($value);
+                } elseif (is_array($value) && !isset($value['__class_name'])) {
+                    foreach ($value as $key => $element) {
+                        $value[$key] = $this->transformStringToDateTimeRecursive($element);
+                    }
 
-                $data[$attr] = $value;
+                    $data[$attr] = $value;
+                }
             }
         }
 

@@ -92,8 +92,10 @@ class TransformRelationListener
         }
 
         if (!isset($source['__class_name'])) {
-            foreach ($source as $key => $item) {
-                $this->restoreRelation($item, $data[$key]);
+            if (is_array($source)) {
+                foreach ($source as $key => $item) {
+                    $this->restoreRelation($item, $data[$key]);
+                }
             }
 
             return null;
@@ -134,8 +136,10 @@ class TransformRelationListener
         }
 
         if (!isset($source['__class_name'])) {
-            foreach ($source as $key => $item) {
-                $this->analyzeToRestoreRelation($item, $data[$key]);
+            if (is_array($source)) {
+                foreach ($source as $key => $item) {
+                    $this->analyzeToRestoreRelation($item, $data[$key]);
+                }
             }
 
             return null;
@@ -168,7 +172,7 @@ class TransformRelationListener
      */
     protected function transformRelationBidirectionalToUnidirectionalRecursive($object)
     {
-        if (!is_object($object)) {
+        if (!is_object($object) || in_array(get_class($object), $this->ignoreObjects())) {
             return $object;
         }
 
@@ -211,5 +215,15 @@ class TransformRelationListener
         }
 
         return $object;
+    }
+
+    /**
+     * @return array
+     */
+    protected function ignoreObjects()
+    {
+        return [
+          \DateTime::class
+        ];
     }
 }
