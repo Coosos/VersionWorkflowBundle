@@ -10,7 +10,7 @@ use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Event\PreFlushEventArgs;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
@@ -60,35 +60,36 @@ class PreFlushListener
     }
 
     /**
-     * @param PreFlushEventArgs $args
+     * @param LifecycleEventArgs $args
      *
+     * @return $this
      * @throws \Doctrine\ORM\ORMException
      * @throws \ReflectionException
      */
-    public function preFlush(PreFlushEventArgs $args)
+    public function prePersist(LifecycleEventArgs $args)
     {
-        $inserts = $args->getEntityManager()->getUnitOfWork()->getScheduledEntityInsertions();
-        foreach ($inserts as $insert) {
-            if (!$insert instanceof VersionWorkflow) {
-                continue;
-            }
+        $insert = $args->getEntity();
 
-            if ($this->versionWorkflowConfiguration->isAutoMerge($insert->getWorkflowName(), $insert->getMarking())) {
-                $args->getEntityManager()->persist($insert->getOriginalObject());
-
-                /** @var VersionWorkflowTrait $originalObject */
-                $originalObject = $insert->getOriginalObject();
-                if ($originalObject->isVersionWorkflowFakeEntity()) {
-                    $t = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
-                }
-            }
-
-            $insert->setOriginalObject(null);
+        if (!$insert instanceof VersionWorkflow) {
+            return $this;
         }
 
-        dump('OKdd');
-        dump($args->getEntityManager()->getUnitOfWork());
-        die;
+        if ($this->versionWorkflowConfiguration->isAutoMerge($insert->getWorkflowName(), $insert->getMarking())) {
+            $args->getEntityManager()->persist($insert->getOriginalObject());
+
+            /** @var VersionWorkflowTrait $originalObject */
+            $originalObject = $insert->getOriginalObject();
+            if ($originalObject->isVersionWorkflowFakeEntity()) {
+                $original = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
+                $original->setVersionWorkflow($insert);
+
+                $args->getEntityManager()->persist($original);
+            }
+        }
+
+        $insert->setOriginalObject(null);
+
+        return $this;
     }
 
     /**
@@ -96,7 +97,7 @@ class PreFlushListener
      * @param VersionWorkflowTrait   $model
      * @param array                  $annotations
      *
-     * @return object|null
+     * @return VersionWorkflowTrait|object|null
      * @throws \ReflectionException
      */
     protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $annotations = [])
@@ -113,7 +114,7 @@ class PreFlushListener
         $identifier = $this->getIdentifiers($classMetadata, $model);
 
         $originalEntity = $entityManager->getRepository($classMetadata->getName())->findOneBy($identifier);
-        $originalEntity = $originalEntity ?? $model;
+        $originalEntity = $originalEntity ?? clone $model;
 
         $this->originalObjectByModelHash[spl_object_hash($model)] = $originalEntity;
 
@@ -162,7 +163,6 @@ class PreFlushListener
                 $model,
                 $entityManager,
                 $metadataField,
-                $associationMapping,
                 $classMetadata
             );
 
@@ -177,7 +177,6 @@ class PreFlushListener
      * @param mixed                  $model
      * @param EntityManagerInterface $entityManager
      * @param string                 $metadataField
-     * @param array                  $associationMapping
      * @param ClassMetadata          $classMetadata
      *
      * @return bool
@@ -188,26 +187,68 @@ class PreFlushListener
         $model,
         $entityManager,
         $metadataField,
-        $associationMapping,
         $classMetadata
     ) {
-        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
-        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
-        $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
-
         $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
 
         $this->parseRemoveElementFromList($originalEntity, $compare, $classMetadata, $metadataField);
+
+        $this->parseUpdateElementFromList(
+            $originalEntity,
+            $model,
+            $compare,
+            $entityManager,
+            $classMetadata,
+            $metadataField
+        );
+
         $this->parseAddElementFromList($originalEntity, $compare, $entityManager, $metadataField);
 
-        dump($this->originalObjectByModelHash);
-        dump($originalEntity);
-        /**
-         * TODO : Use for array
-         * TODO : Check insert & updated
-         */
-
         return true;
+    }
+
+    /**
+     * @param $originalEntity
+     * @param $model
+     * @param $compare
+     * @param $entityManager
+     * @param $classMetadata
+     * @param $field
+     *
+     * @throws \ReflectionException
+     */
+    protected function parseUpdateElementFromList(
+        $originalEntity,
+        $model,
+        $compare,
+        $entityManager,
+        $classMetadata,
+        $field
+    ) {
+        if (!empty($compare['updated'])) {
+            $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
+            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $field);
+            $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $field);
+
+            $modelEntityList = $model->{$getterMethod}();
+            $originalEntityList = $originalEntity->{$getterMethod}();
+
+            foreach ($modelEntityList as $key => $item) {
+                foreach ($originalEntityList as $itemOriginal) {
+                    if ($this->compareIdentifierModel($classMetadata, $item, $itemOriginal)) {
+                        $originalEntityList[$key] = $this->linkFakeModelToDoctrineRecursive(
+                            $entityManager,
+                            $item,
+                            $annotationsResults
+                        );
+
+                        break;
+                    }
+                }
+            }
+
+            $originalEntity->{$setterMethod}($originalEntityList);
+        }
     }
 
     /**

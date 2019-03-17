@@ -32,7 +32,7 @@ services:
 
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\PreFlushListener:
     tags:
-      - { name: doctrine.event_listener, event: preFlush }
+      - { name: doctrine.event_listener, event: prePersist, priority: 1000 }
 
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
     tags:
