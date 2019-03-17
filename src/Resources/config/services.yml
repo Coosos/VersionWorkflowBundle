@@ -30,7 +30,7 @@ services:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }
 
-  Coosos\VersionWorkflowBundle\EventListener\Doctrine\PreFlushListener:
+  Coosos\VersionWorkflowBundle\EventListener\Doctrine\PrePersistListener:
     tags:
       - { name: doctrine.event_listener, event: prePersist, priority: 1000 }
 

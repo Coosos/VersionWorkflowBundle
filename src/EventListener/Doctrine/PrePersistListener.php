@@ -9,17 +9,19 @@ use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Annotations\Reader;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 /**
- * Class PreFlushListener
+ * Class PrePersistListener
+ *
  * @package Coosos\VersionWorkflowBundle\EventListener\Doctrine
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class PreFlushListener
+class PrePersistListener
 {
     /**
      * @var VersionWorkflowConfiguration
@@ -42,21 +44,29 @@ class PreFlushListener
     protected $originalObjectByModelHash;
 
     /**
+     * @var EntityManagerInterface
+     */
+    private $entityManager;
+
+    /**
      * PreFlushListener constructor.
      *
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
      * @param ClassContains                $classContains
      * @param Reader                       $annotationReader
+     * @param EntityManagerInterface       $entityManager
      */
     public function __construct(
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
         ClassContains $classContains,
-        Reader $annotationReader
+        Reader $annotationReader,
+        EntityManagerInterface $entityManager
     ) {
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->classContains = $classContains;
         $this->annotationReader = $annotationReader;
         $this->originalObjectByModelHash = [];
+        $this->entityManager = $entityManager;
     }
 
     /**
@@ -289,18 +299,28 @@ class PreFlushListener
     {
         if (!empty($compare['removed'])) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
-            $setterMethod = $this->classContains->getSetterMethod($originalEntity, $field);
 
             $list = $originalEntity->{$getterMethod}();
             foreach ($list as $key => $item) {
                 foreach ($compare['removed'] as $identifiers) {
                     if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
-                        unset($list[$key]);
+                        if ($list instanceof Collection) {
+                            $originalEntity->{$getterMethod}()->removeElement($item);
+
+                            $metadata = $this->entityManager->getClassMetadata(get_class($item));
+                            $relationToOriginal = $metadata->getAssociationsByTargetClass(get_class($originalEntity));
+                            if (!empty($relationToOriginal)) {
+                                $relationSetter = $this->classContains->getSetterMethod(
+                                    $item,
+                                    array_keys($relationToOriginal)[0]
+                                );
+
+                                $item->{$relationSetter}(null);
+                            }
+                        }
                     }
                 }
             }
-
-            $originalEntity->{$setterMethod}($list);
         }
     }
 
