@@ -1,0 +1,20 @@
+{
+    "name": "coosos/version-workflow-bundle",
+    "description": "Track transition in another model",
+    "type": "symfony-bundle",
+    "require": {
+        "php": ">=7.1",
+        "symfony/workflow": "^4.2",
+        "symfony/serializer": "^4.2"
+    },
+    "license": "LGPL-3",
+    "authors": [
+        {
+            "name": "Rémy Lescallier",
+            "email": "lescallier1@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "Coosos\\VersionWorkflowBundle\\" : "src/" }
+    }
+}
