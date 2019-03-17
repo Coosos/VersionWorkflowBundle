@@ -66,4 +66,24 @@ class ClassContains
 
         return $this->hasTrait($parentClass, $traitName, $isRecursive);
     }
+
+    /**
+     * Get value from object by attribute list
+     *
+     * @param mixed $object
+     * @param array $attributes
+     * @return array
+     */
+    public function getValueByArrayAttribute($object, $attributes)
+    {
+        $list = [];
+        foreach ($attributes as $attribute) {
+            $getterMethod = $this->getGetterMethod($object, $attribute);
+            if ($getterMethod) {
+                $list[$attribute] = $object->{$getterMethod}();
+            }
+        }
+
+        return $list;
+    }
 }

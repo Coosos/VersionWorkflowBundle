@@ -153,6 +153,7 @@ class VersionWorkflowService
             $params
         );
 
+        $entity->setVersionWorkflowFakeEntity(true);
         $entity->setVersionWorkflow($object);
 
         return $entity;
