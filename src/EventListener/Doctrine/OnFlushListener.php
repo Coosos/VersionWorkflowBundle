@@ -14,6 +14,7 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\ORMException;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
 use ReflectionException;
 use Symfony\Component\Workflow\Registry;
@@ -328,14 +329,18 @@ class OnFlushListener
         $classMetadata = $entityManager->getClassMetadata(get_class($entity));
         $unitOfWork = $entityManager->getUnitOfWork();
 
-        $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($classMetadata, Events::preUpdate);
-        $this->listenersInvoker->invoke(
-            $classMetadata,
-            Events::preUpdate,
-            $entity,
-            new PreUpdateEventArgs($entity, $entityManager, $unitOfWork->getEntityChangeSet($entity)),
-            $preUpdateInvoke
-        );
+        try {
+            // Add try catch for ignore recomputeSingleEntityChangeSet error in preUpdate
+            $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($classMetadata, Events::preUpdate);
+            $this->listenersInvoker->invoke(
+                $classMetadata,
+                Events::preUpdate,
+                $entity,
+                new PreUpdateEventArgs($entity, $entityManager, $unitOfWork->getEntityChangeSet($entity)),
+                $preUpdateInvoke
+            );
+        } catch (ORMInvalidArgumentException $e) {
+        }
 
         if ($recompute) {
             $unitOfWork->recomputeSingleEntityChangeSet($classMetadata, $entity);
