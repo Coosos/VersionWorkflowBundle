@@ -67,21 +67,21 @@ class OnFlushListener
      * @param ClassContains                $classContains
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
      * @param Registry                     $registry
-     * @param ListenersInvoker             $listenersInvoker
      * @param VersionWorkflowService       $versionWorkflowService
+     * @param EntityManagerInterface       $entityManager
      */
     public function __construct(
         ClassContains $classContains,
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
         Registry $registry,
-        ListenersInvoker $listenersInvoker,
-        VersionWorkflowService $versionWorkflowService
+        VersionWorkflowService $versionWorkflowService,
+        EntityManagerInterface $entityManager
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->registry = $registry;
         $this->detachDeletionsHash = [];
-        $this->listenersInvoker = $listenersInvoker;
+        $this->listenersInvoker = new ListenersInvoker($entityManager);
         $this->versionWorkflowService = $versionWorkflowService;
     }
 

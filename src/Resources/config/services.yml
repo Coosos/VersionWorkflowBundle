@@ -11,9 +11,6 @@ services:
   Coosos\VersionWorkflowBundle\Service\SerializerService:
     public: true
 
-  Doctrine\ORM\Event\ListenersInvoker:
-    public: true
-
   Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformArrayCollectionListener:
     tags:
       - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
