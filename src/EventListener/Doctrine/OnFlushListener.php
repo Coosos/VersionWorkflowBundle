@@ -4,9 +4,8 @@ namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
-use Coosos\VersionWorkflowBundle\Service\SerializerService;
+use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
-use Coosos\VersionWorkflowBundle\Utils\CloneObject;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -54,17 +53,12 @@ class OnFlushListener
     /**
      * @var ListenersInvoker
      */
-    private $listenersInvoker;
+    protected $listenersInvoker;
 
     /**
-     * @var SerializerService
+     * @var VersionWorkflowService
      */
-    private $serializerService;
-
-    /**
-     * @var CloneObject
-     */
-    private $cloneObject;
+    protected $versionWorkflowService;
 
     /**
      * OnFlushListener constructor.
@@ -73,24 +67,21 @@ class OnFlushListener
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
      * @param Registry                     $registry
      * @param ListenersInvoker             $listenersInvoker
-     * @param SerializerService            $serializerService
-     * @param CloneObject                  $cloneObject
+     * @param VersionWorkflowService       $versionWorkflowService
      */
     public function __construct(
         ClassContains $classContains,
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
         Registry $registry,
         ListenersInvoker $listenersInvoker,
-        SerializerService $serializerService,
-        CloneObject $cloneObject
+        VersionWorkflowService $versionWorkflowService
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->registry = $registry;
         $this->detachDeletionsHash = [];
         $this->listenersInvoker = $listenersInvoker;
-        $this->serializerService = $serializerService;
-        $this->cloneObject = $cloneObject;
+        $this->versionWorkflowService = $versionWorkflowService;
     }
 
     /**
@@ -142,10 +133,7 @@ class OnFlushListener
 
                             if ($scheduledEntity->getVersionWorkflow()) {
                                 $scheduledEntity->getVersionWorkflow()->setObjectSerialized(
-                                    $this->serializerService->serialize(
-                                        $this->cloneObject->cloneObject($scheduledEntity, ['versionWorkflow']),
-                                        'json'
-                                    )
+                                    $this->versionWorkflowService->cloneAndSerializeObject($scheduledEntity)
                                 );
 
                                 $this->invokePreUpdateEvent(

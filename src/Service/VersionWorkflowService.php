@@ -7,6 +7,7 @@ use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Coosos\VersionWorkflowBundle\Utils\CloneObject;
+use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -92,7 +93,7 @@ class VersionWorkflowService
      * @param array                       $params
      *
      * @return VersionWorkflowModel
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function transformToVersionWorkflowModel($object, ?string $workflowName, $params = [])
     {
@@ -106,8 +107,7 @@ class VersionWorkflowService
             $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
-        $objectCloned = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
-        $versionWorkflow->setObjectSerialized($this->serializerService->serialize($objectCloned, 'json', $params));
+        $versionWorkflow->setObjectSerialized($this->cloneAndSerializeObject($object, $params));
 
         $object->setVersionWorkflow($versionWorkflow);
         $object->setWorkflowName($workflowName);
@@ -157,6 +157,22 @@ class VersionWorkflowService
         $entity->setVersionWorkflow($object);
 
         return $entity;
+    }
+
+    /**
+     * Clone and serialize object
+     *
+     * @param mixed $object
+     * @param array $params
+     *
+     * @return string
+     * @throws ReflectionException
+     */
+    public function cloneAndSerializeObject($object, $params = [])
+    {
+        $objectCloned = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
+
+        return $this->serializerService->serialize($objectCloned, 'json', $params);
     }
 
     /**
