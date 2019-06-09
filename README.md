@@ -13,3 +13,9 @@ Once all transitions are complete, it merges the object into the original table.
 If an old entity yet exists the same identifier, it will be replaced while keeping the same identifier. 
 
 **This can be very useful for avoiding a loss of SEO from search engines.**
+
+## Navigation
+
+* [Installation](docs/install.md)
+* [Configuration](docs/config.md)
+* [Basic usage](docs/usage.md)
