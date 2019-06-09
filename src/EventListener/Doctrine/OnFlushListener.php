@@ -2,13 +2,22 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 
+use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Events;
+use Doctrine\ORM\ORMException;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
+use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -44,21 +53,37 @@ class OnFlushListener
     protected $detachDeletionsHash;
 
     /**
+     * @var ListenersInvoker
+     */
+    protected $listenersInvoker;
+
+    /**
+     * @var VersionWorkflowService
+     */
+    protected $versionWorkflowService;
+
+    /**
      * OnFlushListener constructor.
      *
-     * @param ClassContains $classContains
+     * @param ClassContains                $classContains
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
-     * @param Registry $registry
+     * @param Registry                     $registry
+     * @param VersionWorkflowService       $versionWorkflowService
+     * @param EntityManagerInterface       $entityManager
      */
     public function __construct(
         ClassContains $classContains,
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
-        Registry $registry
+        Registry $registry,
+        VersionWorkflowService $versionWorkflowService,
+        EntityManagerInterface $entityManager
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->registry = $registry;
         $this->detachDeletionsHash = [];
+        $this->listenersInvoker = new ListenersInvoker($entityManager);
+        $this->versionWorkflowService = $versionWorkflowService;
     }
 
     /**
@@ -66,8 +91,8 @@ class OnFlushListener
      *
      * @param OnFlushEventArgs $args
      *
-     * @throws \ReflectionException
-     * @throws \Doctrine\ORM\ORMException
+     * @throws ReflectionException
+     * @throws ORMException
      */
     public function onFlush(OnFlushEventArgs $args)
     {
@@ -106,18 +131,20 @@ class OnFlushListener
                         }
 
                         if (!$autoMerge || $scheduledEntity->isVersionWorkflowFakeEntity()) {
-                            $this->detachRecursive($args, $scheduledEntity);
+                            $this->detachRecursive($args, $scheduledEntity, $scheduledType);
+                            $this->updateSerializedObject($scheduledEntity, $args->getEntityManager());
                         }
                     }
                 }
             }
+
             if ($scheduledType === 'entityDeletions' || $scheduledType === 'collectionDeletions') {
                 foreach ($item as $scheduledEntity) {
                     $this->detachDeletionsHash = [];
                     $detachDeletions = $this->checkDetachDeletionsRecursive($args, $scheduledEntity);
                     if ($detachDeletions && !$scheduledEntity instanceof PersistentCollection) {
                         $args->getEntityManager()->persist($scheduledEntity);
-                        $this->detachRecursive($args, $scheduledEntity);
+                        $this->detachRecursive($args, $scheduledEntity, $scheduledType);
                     }
 
                     if ($detachDeletions && $scheduledEntity instanceof PersistentCollection) {
@@ -186,12 +213,19 @@ class OnFlushListener
      *
      * @param OnFlushEventArgs           $args
      * @param VersionWorkflowTrait|mixed $entity
+     * @param string|null                $scheduledType
      */
-    protected function detachRecursive(OnFlushEventArgs $args, $entity)
+    protected function detachRecursive(OnFlushEventArgs $args, $entity, ?string $scheduledType = null)
     {
-        $args->getEntityManager()->detach($entity);
+        $entityManager = $args->getEntityManager();
+        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
+        if (!$entity instanceof VersionWorkflow && $scheduledType && $scheduledType === 'entityUpdates') {
+            $this->invokePreUpdateEvent($entityManager, $entity);
+        }
+
+        $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
-        $classMetaData = $args->getEntityManager()->getClassMetadata(get_class($entity));
+
         foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
@@ -201,7 +235,7 @@ class OnFlushListener
                         continue;
                     }
 
-                    $this->detachRecursive($args, $item);
+                    $this->detachRecursive($args, $item, $scheduledType);
 
                     continue;
                 }
@@ -218,7 +252,7 @@ class OnFlushListener
                         continue;
                     }
 
-                    $this->detachRecursive($args, $item);
+                    $this->detachRecursive($args, $item, $scheduledType);
                 }
 
                 continue;
@@ -232,7 +266,7 @@ class OnFlushListener
      * @param mixed $model
      *
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function hasVersionWorkflowTrait($model)
     {
@@ -276,5 +310,61 @@ class OnFlushListener
             $model->getWorkflowName(),
             $place
         );
+    }
+
+    /**
+     * Invoke preUpdate doctrine event
+     *
+     * @param EntityManagerInterface $entityManager
+     * @param mixed                  $entity
+     * @param bool                   $recompute
+     */
+    protected function invokePreUpdateEvent($entityManager, $entity, $recompute = false)
+    {
+        $classMetadata = $entityManager->getClassMetadata(get_class($entity));
+        $unitOfWork = $entityManager->getUnitOfWork();
+
+        try {
+            // Add try catch for ignore recomputeSingleEntityChangeSet error in preUpdate
+            $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($classMetadata, Events::preUpdate);
+            $this->listenersInvoker->invoke(
+                $classMetadata,
+                Events::preUpdate,
+                $entity,
+                new PreUpdateEventArgs($entity, $entityManager, $unitOfWork->getEntityChangeSet($entity)),
+                $preUpdateInvoke
+            );
+        } catch (ORMInvalidArgumentException $e) {
+        }
+
+        if ($recompute) {
+            $unitOfWork->recomputeSingleEntityChangeSet($classMetadata, $entity);
+        }
+    }
+
+    /**
+     * Update serialized object
+     *
+     * @param VersionWorkflowTrait   $entity
+     * @param EntityManagerInterface $entityManager
+     *
+     * @return VersionWorkflowTrait
+     * @throws ReflectionException
+     */
+    protected function updateSerializedObject($entity, $entityManager)
+    {
+        if ($entity->getVersionWorkflow()) {
+            $entity->getVersionWorkflow()->setObjectSerialized(
+                $this->versionWorkflowService->cloneAndSerializeObject($entity)
+            );
+
+            $this->invokePreUpdateEvent(
+                $entityManager,
+                $entity->getVersionWorkflow(),
+                true
+            );
+        }
+
+        return $entity;
     }
 }
