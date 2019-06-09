@@ -176,6 +176,28 @@ class VersionWorkflowService
     }
 
     /**
+     * Apply transition and transform object to version workflow model
+     *
+     * @param VersionWorkflowModel|VersionWorkflowTrait $object
+     * @param string|null                               $workflowName
+     * @param string|null                               $transition
+     * @param array                                     $params
+     *
+     * @return VersionWorkflowModel
+     * @throws ReflectionException
+     */
+    public function applyTransitionAndTransformToVersionWorkflow(
+        $object,
+        ?string $workflowName,
+        ?string $transition = null,
+        array $params = []
+    ) {
+        $object = $this->applyTransition($object, $workflowName, $transition);
+
+        return $this->transformToVersionWorkflowModel($object, $workflowName, $params);
+    }
+
+    /**
      * @param mixed       $object
      * @param string|null $workflowName
      *
