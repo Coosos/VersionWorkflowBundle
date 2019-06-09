@@ -4,11 +4,19 @@ namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use Coosos\VersionWorkflowBundle\Utils\CloneObject;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Events;
+use Doctrine\ORM\ORMException;
 use Doctrine\ORM\PersistentCollection;
+use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -44,21 +52,45 @@ class OnFlushListener
     protected $detachDeletionsHash;
 
     /**
+     * @var ListenersInvoker
+     */
+    private $listenersInvoker;
+
+    /**
+     * @var SerializerService
+     */
+    private $serializerService;
+
+    /**
+     * @var CloneObject
+     */
+    private $cloneObject;
+
+    /**
      * OnFlushListener constructor.
      *
-     * @param ClassContains $classContains
+     * @param ClassContains                $classContains
      * @param VersionWorkflowConfiguration $versionWorkflowConfiguration
-     * @param Registry $registry
+     * @param Registry                     $registry
+     * @param ListenersInvoker             $listenersInvoker
+     * @param SerializerService            $serializerService
+     * @param CloneObject                  $cloneObject
      */
     public function __construct(
         ClassContains $classContains,
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
-        Registry $registry
+        Registry $registry,
+        ListenersInvoker $listenersInvoker,
+        SerializerService $serializerService,
+        CloneObject $cloneObject
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
         $this->registry = $registry;
         $this->detachDeletionsHash = [];
+        $this->listenersInvoker = $listenersInvoker;
+        $this->serializerService = $serializerService;
+        $this->cloneObject = $cloneObject;
     }
 
     /**
@@ -66,8 +98,8 @@ class OnFlushListener
      *
      * @param OnFlushEventArgs $args
      *
-     * @throws \ReflectionException
-     * @throws \Doctrine\ORM\ORMException
+     * @throws ReflectionException
+     * @throws ORMException
      */
     public function onFlush(OnFlushEventArgs $args)
     {
@@ -107,6 +139,21 @@ class OnFlushListener
 
                         if (!$autoMerge || $scheduledEntity->isVersionWorkflowFakeEntity()) {
                             $this->detachRecursive($args, $scheduledEntity);
+
+                            if ($scheduledEntity->getVersionWorkflow()) {
+                                $scheduledEntity->getVersionWorkflow()->setObjectSerialized(
+                                    $this->serializerService->serialize(
+                                        $this->cloneObject->cloneObject($scheduledEntity, ['versionWorkflow']),
+                                        'json'
+                                    )
+                                );
+
+                                $this->invokePreUpdateEvent(
+                                    $args->getEntityManager(),
+                                    $scheduledEntity->getVersionWorkflow(),
+                                    true
+                                );
+                            }
                         }
                     }
                 }
@@ -189,9 +236,12 @@ class OnFlushListener
      */
     protected function detachRecursive(OnFlushEventArgs $args, $entity)
     {
-        $args->getEntityManager()->detach($entity);
+        $entityManager = $args->getEntityManager();
+        $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
-        $classMetaData = $args->getEntityManager()->getClassMetadata(get_class($entity));
+        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
+        $this->invokePreUpdateEvent($entityManager, $entity);
+
         foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
@@ -232,7 +282,7 @@ class OnFlushListener
      * @param mixed $model
      *
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function hasVersionWorkflowTrait($model)
     {
@@ -276,5 +326,31 @@ class OnFlushListener
             $model->getWorkflowName(),
             $place
         );
+    }
+
+    /**
+     * Invoke preUpdate doctrine event
+     *
+     * @param EntityManagerInterface $entityManager
+     * @param mixed                  $entity
+     * @param bool                   $recompute
+     */
+    protected function invokePreUpdateEvent($entityManager, $entity, $recompute = false)
+    {
+        $classMetadata = $entityManager->getClassMetadata(get_class($entity));
+        $unitOfWork = $entityManager->getUnitOfWork();
+
+        $preUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($classMetadata, Events::preUpdate);
+        $this->listenersInvoker->invoke(
+            $classMetadata,
+            Events::preUpdate,
+            $entity,
+            new PreUpdateEventArgs($entity, $entityManager, $unitOfWork->getEntityChangeSet($entity)),
+            $preUpdateInvoke
+        );
+
+        if ($recompute) {
+            $unitOfWork->recomputeSingleEntityChangeSet($classMetadata, $entity);
+        }
     }
 }
