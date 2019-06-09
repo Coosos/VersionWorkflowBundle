@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 
+use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
@@ -130,7 +131,7 @@ class OnFlushListener
                         }
 
                         if (!$autoMerge || $scheduledEntity->isVersionWorkflowFakeEntity()) {
-                            $this->detachRecursive($args, $scheduledEntity);
+                            $this->detachRecursive($args, $scheduledEntity, $scheduledType);
                             $this->updateSerializedObject($scheduledEntity, $args->getEntityManager());
                         }
                     }
@@ -143,7 +144,7 @@ class OnFlushListener
                     $detachDeletions = $this->checkDetachDeletionsRecursive($args, $scheduledEntity);
                     if ($detachDeletions && !$scheduledEntity instanceof PersistentCollection) {
                         $args->getEntityManager()->persist($scheduledEntity);
-                        $this->detachRecursive($args, $scheduledEntity);
+                        $this->detachRecursive($args, $scheduledEntity, $scheduledType);
                     }
 
                     if ($detachDeletions && $scheduledEntity instanceof PersistentCollection) {
@@ -212,15 +213,19 @@ class OnFlushListener
      *
      * @param OnFlushEventArgs           $args
      * @param VersionWorkflowTrait|mixed $entity
+     * @param string|null                $scheduledType
      */
-    protected function detachRecursive(OnFlushEventArgs $args, $entity)
+    protected function detachRecursive(OnFlushEventArgs $args, $entity, ?string $scheduledType = null)
     {
         $entityManager = $args->getEntityManager();
-        $this->invokePreUpdateEvent($entityManager, $entity);
+        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
+        if (!$entity instanceof VersionWorkflow && $scheduledType && $scheduledType === 'entityUpdates') {
+            $this->invokePreUpdateEvent($entityManager, $entity);
+        }
+
         $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
 
-        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
         foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
@@ -230,7 +235,7 @@ class OnFlushListener
                         continue;
                     }
 
-                    $this->detachRecursive($args, $item);
+                    $this->detachRecursive($args, $item, $scheduledType);
 
                     continue;
                 }
@@ -247,7 +252,7 @@ class OnFlushListener
                         continue;
                     }
 
-                    $this->detachRecursive($args, $item);
+                    $this->detachRecursive($args, $item, $scheduledType);
                 }
 
                 continue;
