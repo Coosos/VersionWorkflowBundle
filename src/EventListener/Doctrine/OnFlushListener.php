@@ -131,22 +131,12 @@ class OnFlushListener
 
                         if (!$autoMerge || $scheduledEntity->isVersionWorkflowFakeEntity()) {
                             $this->detachRecursive($args, $scheduledEntity);
-
-                            if ($scheduledEntity->getVersionWorkflow()) {
-                                $scheduledEntity->getVersionWorkflow()->setObjectSerialized(
-                                    $this->versionWorkflowService->cloneAndSerializeObject($scheduledEntity)
-                                );
-
-                                $this->invokePreUpdateEvent(
-                                    $args->getEntityManager(),
-                                    $scheduledEntity->getVersionWorkflow(),
-                                    true
-                                );
-                            }
+                            $this->updateSerializedObject($scheduledEntity, $args->getEntityManager());
                         }
                     }
                 }
             }
+
             if ($scheduledType === 'entityDeletions' || $scheduledType === 'collectionDeletions') {
                 foreach ($item as $scheduledEntity) {
                     $this->detachDeletionsHash = [];
@@ -226,11 +216,11 @@ class OnFlushListener
     protected function detachRecursive(OnFlushEventArgs $args, $entity)
     {
         $entityManager = $args->getEntityManager();
+        $this->invokePreUpdateEvent($entityManager, $entity);
         $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
-        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
-        $this->invokePreUpdateEvent($entityManager, $entity);
 
+        $classMetaData = $entityManager->getClassMetadata(get_class($entity));
         foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
@@ -345,5 +335,31 @@ class OnFlushListener
         if ($recompute) {
             $unitOfWork->recomputeSingleEntityChangeSet($classMetadata, $entity);
         }
+    }
+
+    /**
+     * Update serialized object
+     *
+     * @param VersionWorkflowTrait   $entity
+     * @param EntityManagerInterface $entityManager
+     *
+     * @return VersionWorkflowTrait
+     * @throws ReflectionException
+     */
+    protected function updateSerializedObject($entity, $entityManager)
+    {
+        if ($entity->getVersionWorkflow()) {
+            $entity->getVersionWorkflow()->setObjectSerialized(
+                $this->versionWorkflowService->cloneAndSerializeObject($entity)
+            );
+
+            $this->invokePreUpdateEvent(
+                $entityManager,
+                $entity->getVersionWorkflow(),
+                true
+            );
+        }
+
+        return $entity;
     }
 }
