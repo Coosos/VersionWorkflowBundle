@@ -7,6 +7,11 @@ use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use DateTime;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
+use SplFileInfo;
 
 /**
  * Class TransformRelationListener
@@ -40,7 +45,7 @@ class TransformRelationListener
 
     /**
      * @param PreSerializeEvent $preSerializeEvent
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializeEvent)
     {
@@ -168,7 +173,7 @@ class TransformRelationListener
     /**
      * @param VersionWorkflowTrait|mixed $object
      * @return VersionWorkflowTrait|mixed
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function transformRelationBidirectionalToUnidirectionalRecursive($object)
     {
@@ -185,11 +190,11 @@ class TransformRelationListener
         $this->alreadyHashObject[$splObjectHash] = $splObjectHash;
         $object->{self::ATTR_NAME} = $splObjectHash;
 
-        $reflect = new \ReflectionClass($object);
+        $reflect = new ReflectionClass($object);
         $properties = $reflect->getProperties(
-            \ReflectionProperty::IS_PUBLIC |
-            \ReflectionProperty::IS_PROTECTED |
-            \ReflectionProperty::IS_PRIVATE
+            ReflectionProperty::IS_PUBLIC |
+            ReflectionProperty::IS_PROTECTED |
+            ReflectionProperty::IS_PRIVATE
         );
 
         foreach ($properties as $property) {
@@ -223,7 +228,8 @@ class TransformRelationListener
     protected function ignoreObjects()
     {
         return [
-          \DateTime::class
+          DateTime::class,
+          SplFileInfo::class
         ];
     }
 }
