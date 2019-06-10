@@ -16,6 +16,7 @@ If an old entity yet exists the same identifier, it will be replaced while keepi
 
 ## Navigation
 
+* [How does it work](docs/how-does-it-work.md)
 * [Installation](docs/install.md)
 * [Configuration](docs/config.md)
 * [Basic usage](docs/usage.md)
