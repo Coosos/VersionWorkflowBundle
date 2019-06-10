@@ -1,5 +1,16 @@
 # Usage
 
+# Prepare your model
+
+For your model to work with bundle, is necessary to use VersionWorkflowTrait.
+
+    class News
+    {
+        use \Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+    }
+
+_Note: With doctrine, is necessary to update schema_
+
 ## Apply transition and transform model
 
     public function __construct(Coosos\VersionWorkflowBundle\Service\VersionWorkflowService $versionWorkflowService)
