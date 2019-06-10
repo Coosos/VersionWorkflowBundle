@@ -2,14 +2,19 @@
 
 namespace Coosos\VersionWorkflowBundle\Normalizer;
 
+use ArrayIterator;
 use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
+use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
@@ -79,7 +84,7 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
 
     /**
      * {@inheritdoc}
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function denormalize($data, $class, $format = null, array $context = [])
     {
@@ -89,13 +94,29 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function supportsDenormalization($data, $type, $format = null)
+    {
+        return parent::supportsDenormalization($data, $type, $format);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function supportsNormalization($data, $format = null)
+    {
+        return is_object($data) && $format === 'json';
+    }
+
+    /**
      * @param $data
      * @param $class
      * @param $format
      * @param $context
      * @return object
-     * @throws \ReflectionException
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws ReflectionException
+     * @throws ExceptionInterface
      */
     protected function denormalizeRecursive($data, $class, $format = null, array $context = [])
     {
@@ -103,7 +124,7 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
             return $data;
         }
 
-        if ($class !== \ArrayIterator::class) {
+        if ($class !== ArrayIterator::class) {
             foreach ($data as $attribute => $value) {
                 if (is_array($value) && isset($value['__class_name'])) {
                     if ($value['__class_name'] === 'Doctrine\Common\Collections\ArrayCollection') {
@@ -137,16 +158,44 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
     /**
      * {@inheritdoc}
      */
-    public function supportsDenormalization($data, $type, $format = null)
+    protected function getAttributeValue($object, $attribute, $format = null, array $context = [])
     {
-        return parent::supportsDenormalization($data, $type, $format);
+        try {
+            $reflectionProperty = $this->getReflectionProperty($object, $attribute);
+        } catch (ReflectionException $reflectionException) {
+            return null;
+        }
+
+        // Override visibility
+        if (!$reflectionProperty->isPublic()) {
+            $reflectionProperty->setAccessible(true);
+        }
+
+        return $reflectionProperty->getValue($object);
     }
 
     /**
-     * {@inheritdoc}
+     * Get reflection property
+     *
+     * @param string|object $classOrObject
+     * @param string        $attribute
+     *
+     * @return ReflectionProperty
+     * @throws ReflectionException
      */
-    public function supportsNormalization($data, $format = null)
+    private function getReflectionProperty($classOrObject, string $attribute): ReflectionProperty
     {
-        return is_object($data) && $format === 'json';
+        $reflectionClass = new ReflectionClass($classOrObject);
+        while (true) {
+            try {
+                return $reflectionClass->getProperty($attribute);
+            } catch (ReflectionException $e) {
+                if (!$reflectionClass = $reflectionClass->getParentClass()) {
+                    throw $e;
+                }
+            }
+        }
+
+        return null;
     }
 }
