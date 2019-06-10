@@ -4,6 +4,9 @@ namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 
 /**
  * Class TransformArrayCollection
@@ -32,7 +35,7 @@ class TransformArrayCollectionListener
 
     /**
      * @param PreSerializeEvent $preSerializeEvent
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializeEvent)
     {
@@ -43,7 +46,7 @@ class TransformArrayCollectionListener
     /**
      * @param mixed $model
      * @return mixed
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function transformArrayCollectionToArrayRecursive($model)
     {
@@ -60,30 +63,35 @@ class TransformArrayCollectionListener
             return $array;
         }
 
-        $reflect = new \ReflectionClass($model);
+        $reflect = new ReflectionClass($model);
         $properties = $reflect->getProperties(
-            \ReflectionProperty::IS_PUBLIC |
-            \ReflectionProperty::IS_PROTECTED |
-            \ReflectionProperty::IS_PRIVATE
+            ReflectionProperty::IS_PUBLIC |
+            ReflectionProperty::IS_PROTECTED |
+            ReflectionProperty::IS_PRIVATE
         );
 
         foreach ($properties as $property) {
-            $getterMethod = $this->classContains->getGetterMethod($model, $property->getName());
-            $setterMethod = $this->classContains->getSetterMethod($model, $property->getName());
-            if (is_null($getterMethod) || is_null($setterMethod)) {
-                continue;
-            }
+            $property->setAccessible(true);
+            $propertyValue = $property->getValue($model);
 
-            $getterValue = $model->{$getterMethod}();
-            if (is_array($getterValue)) {
-                $getterValueArray = [];
-                foreach ($getterValue as $key => $value) {
-                    $getterValueArray[$key] = $this->transformArrayCollectionToArrayRecursive($value);
+            if (!is_null($propertyValue)) {
+                $getterMethod = $this->classContains->getGetterMethod($model, $property->getName());
+                $setterMethod = $this->classContains->getSetterMethod($model, $property->getName());
+                if (is_null($getterMethod) || is_null($setterMethod)) {
+                    continue;
                 }
 
-                $model->{$setterMethod}($getterValueArray);
-            } else {
-                $model->{$setterMethod}($this->transformArrayCollectionToArrayRecursive($getterValue));
+                $getterValue = $model->{$getterMethod}();
+                if (is_array($getterValue)) {
+                    $getterValueArray = [];
+                    foreach ($getterValue as $key => $value) {
+                        $getterValueArray[$key] = $this->transformArrayCollectionToArrayRecursive($value);
+                    }
+
+                    $model->{$setterMethod}($getterValueArray);
+                } else {
+                    $model->{$setterMethod}($this->transformArrayCollectionToArrayRecursive($getterValue));
+                }
             }
         }
 

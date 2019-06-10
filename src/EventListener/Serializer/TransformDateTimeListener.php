@@ -5,6 +5,10 @@ namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use DateTime;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 
 /**
  * Class TransformDateTimeListener
@@ -31,7 +35,7 @@ class TransformDateTimeListener
 
     /**
      * @param PreSerializeEvent $preSerializerEvent
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function onCoososVersionWorkflowPreSerialize(PreSerializeEvent $preSerializerEvent)
     {
@@ -41,7 +45,7 @@ class TransformDateTimeListener
 
     /**
      * @param PreDeserializeEvent $preDeserializeEvent
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function onCoososVersionWorkflowPreDeserialize(PreDeserializeEvent $preDeserializeEvent)
     {
@@ -52,13 +56,13 @@ class TransformDateTimeListener
 
     /**
      * @param $data
-     * @return object
-     * @throws \ReflectionException
+     * @return object|mixed
+     * @throws ReflectionException
      */
     public function transformStringToDateTimeRecursive($data)
     {
         if (isset($data['__class_name']) && $data['__class_name'] === 'DateTime') {
-            $reflector = new \ReflectionClass(\DateTime::class);
+            $reflector = new ReflectionClass(DateTime::class);
             return $reflector->newInstanceArgs($data['__construct']);
         }
 
@@ -82,7 +86,7 @@ class TransformDateTimeListener
     /**
      * @param mixed $model
      * @return mixed
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function tranformDateTimeToStringRecursive($model)
     {
@@ -91,34 +95,39 @@ class TransformDateTimeListener
         }
 
         if ($this->isDateTime($model)) {
-            return ['__class_name' => 'DateTime', '__construct' => [$model->format(\DateTime::ISO8601)]];
+            return ['__class_name' => 'DateTime', '__construct' => [$model->format(DateTime::ISO8601)]];
         }
 
-        $reflect = new \ReflectionClass($model);
+        $reflect = new ReflectionClass($model);
         $properties = $reflect->getProperties(
-            \ReflectionProperty::IS_PUBLIC |
-            \ReflectionProperty::IS_PROTECTED |
-            \ReflectionProperty::IS_PRIVATE
+            ReflectionProperty::IS_PUBLIC |
+            ReflectionProperty::IS_PROTECTED |
+            ReflectionProperty::IS_PRIVATE
         );
 
         foreach ($properties as $property) {
-            $getterMethod = $this->classContains->getGetterMethod($model, $property->getName());
-            $setterMethod = $this->classContains->getSetterMethod($model, $property->getName());
-            if (is_null($getterMethod) || is_null($setterMethod)) {
-                continue;
-            }
+            $property->setAccessible(true);
+            $propertyValue = $property->getValue($model);
 
-            $getterValue = $model->{$getterMethod}();
-            if (is_array($getterValue)) {
-                $getterValueArray = [];
-
-                foreach ($getterValue as $key => $value) {
-                    $getterValueArray[$key] = $this->tranformDateTimeToStringRecursive($value);
+            if (!is_null($propertyValue)) {
+                $getterMethod = $this->classContains->getGetterMethod($model, $property->getName());
+                $setterMethod = $this->classContains->getSetterMethod($model, $property->getName());
+                if (is_null($getterMethod) || is_null($setterMethod)) {
+                    continue;
                 }
 
-                $model->{$setterMethod}($getterValueArray);
-            } else {
-                $model->{$setterMethod}($this->tranformDateTimeToStringRecursive($getterValue));
+                $getterValue = $model->{$getterMethod}();
+                if (is_array($getterValue)) {
+                    $getterValueArray = [];
+
+                    foreach ($getterValue as $key => $value) {
+                        $getterValueArray[$key] = $this->tranformDateTimeToStringRecursive($value);
+                    }
+
+                    $model->{$setterMethod}($getterValueArray);
+                } else {
+                    $model->{$setterMethod}($this->tranformDateTimeToStringRecursive($getterValue));
+                }
             }
         }
 
