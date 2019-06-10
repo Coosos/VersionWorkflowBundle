@@ -13,7 +13,7 @@
         "symfony/property-info": "^4.2",
         "doctrine/orm": "^2.6"
     },
-    "license": "LGPL-3",
+    "license": "GPL-3.0",
     "authors": [
         {
             "name": "Rémy Lescallier",
