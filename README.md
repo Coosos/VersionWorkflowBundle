@@ -1,4 +1,4 @@
-[![SymfonyInsight](https://insight.symfony.com/projects/ece16dcb-410d-4051-ad20-08bb18368afb/mini.svg)](https://insight.symfony.com/projects/ece16dcb-410d-4051-ad20-08bb18368afb)(https://insight.symfony.com/projects/92617ede-54b3-49b2-bca7-4d5f7782b965)
+[![SymfonyInsight](https://insight.symfony.com/projects/ece16dcb-410d-4051-ad20-08bb18368afb/mini.svg)](https://insight.symfony.com/projects/ece16dcb-410d-4051-ad20-08bb18368afb)
 
 # Coosos/VersionWorkflowBundle
 
