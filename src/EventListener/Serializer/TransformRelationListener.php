@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\EventListener\Serializer;
 
+use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Event\PostDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
@@ -228,8 +229,9 @@ class TransformRelationListener
     protected function ignoreObjects()
     {
         return [
-          DateTime::class,
-          SplFileInfo::class
+            DateTime::class,
+            SplFileInfo::class,
+            VersionWorkflow::class,
         ];
     }
 }

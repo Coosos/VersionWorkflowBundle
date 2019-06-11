@@ -14,6 +14,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\ORMException;
+use ReflectionException;
+use ReflectionProperty;
 
 /**
  * Class PrePersistListener
@@ -73,8 +76,8 @@ class PrePersistListener
      * @param LifecycleEventArgs $args
      *
      * @return $this
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \ReflectionException
+     * @throws ORMException
+     * @throws ReflectionException
      */
     public function prePersist(LifecycleEventArgs $args)
     {
@@ -85,15 +88,16 @@ class PrePersistListener
         }
 
         if ($this->versionWorkflowConfiguration->isAutoMerge($insert->getWorkflowName(), $insert->getMarking())) {
-            $args->getEntityManager()->persist($insert->getOriginalObject());
-
             /** @var VersionWorkflowTrait $originalObject */
             $originalObject = $insert->getOriginalObject();
             if ($originalObject->isVersionWorkflowFakeEntity()) {
                 $original = $this->linkFakeModelToDoctrineRecursive($args->getEntityManager(), $originalObject);
                 $original->setVersionWorkflow($insert);
+                $original->setVersionWorkflowFakeEntity(false);
 
                 $args->getEntityManager()->persist($original);
+            } else {
+                $args->getEntityManager()->persist($insert->getOriginalObject());
             }
         }
 
@@ -108,7 +112,7 @@ class PrePersistListener
      * @param array                  $annotations
      *
      * @return VersionWorkflowTrait|object|null
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $annotations = [])
     {
@@ -143,7 +147,7 @@ class PrePersistListener
      * @param mixed                  $originalEntity
      * @param mixed                  $model
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function updateRelationMapping($entityManager, $originalEntity, $model)
     {
@@ -190,7 +194,7 @@ class PrePersistListener
      * @param ClassMetadata          $classMetadata
      *
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function parseListRelation(
         $originalEntity,
@@ -225,7 +229,7 @@ class PrePersistListener
      * @param $classMetadata
      * @param $field
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function parseUpdateElementFromList(
         $originalEntity,
@@ -267,7 +271,7 @@ class PrePersistListener
      * @param EntityManagerInterface $entityManager
      * @param string                 $field
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function parseAddElementFromList($originalEntity, $compare, $entityManager, $field)
     {
@@ -332,7 +336,7 @@ class PrePersistListener
      * @param $associationMapping
      *
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function parseSingleRelation(
         $originalEntity,
@@ -437,11 +441,11 @@ class PrePersistListener
      * @param $field
      *
      * @return array
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function getAnnotationResults($entityClass, $field)
     {
-        $reflectionProperty = new \ReflectionProperty($entityClass, $field);
+        $reflectionProperty = new ReflectionProperty($entityClass, $field);
         $onlyId = $this->annotationReader->getPropertyAnnotation($reflectionProperty, OnlyId::class);
         $ignoreChange = $this->annotationReader->getPropertyAnnotation($reflectionProperty, IgnoreChange::class);
 
@@ -457,7 +461,7 @@ class PrePersistListener
      * @param mixed         $originalEntity
      * @param mixed         $model
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     protected function updateSimpleMapping($classMetadata, $identifiers, $originalEntity, $model)
     {
