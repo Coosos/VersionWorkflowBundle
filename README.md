@@ -1,3 +1,5 @@
+[![SymfonyInsight](https://insight.symfony.com/projects/92617ede-54b3-49b2-bca7-4d5f7782b965/mini.svg)](https://insight.symfony.com/projects/92617ede-54b3-49b2-bca7-4d5f7782b965)
+
 # Coosos/VersionWorkflowBundle
 
 **/!\ This bundle is currently under development /!\\**
