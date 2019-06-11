@@ -60,17 +60,26 @@ class VersionWorkflowService
 
     /**
      * @param VersionWorkflowTrait|mixed $object
-     * @param string|null $workflowName
-     * @param string|null $transition
+     * @param string|null                $workflowName
+     * @param string|null                $transition
+     * @param string|null                $marking
+     *
      * @return VersionWorkflowTrait|mixed
      */
-    public function applyTransition($object, ?string $workflowName, $transition = null)
+    public function applyTransition($object, ?string $workflowName, $transition = null, $marking = null)
     {
         $workflow = $this->workflows->get($object, $workflowName);
 
         if (is_null($transition)) {
-            $marking = $workflow->getDefinition()->getInitialPlace();
-            $setterMethod = $this->classContains->getSetterMethod($object, $this->getMarkingProperty($object, $workflowName));
+            $setterMethod = $this->classContains->getSetterMethod(
+                $object,
+                $this->getMarkingProperty($object, $workflowName)
+            );
+
+            if (is_null($marking)) {
+                $marking = $workflow->getDefinition()->getInitialPlace();
+            }
+
             if ($setterMethod) {
                 $object->{$setterMethod}($marking);
             }
@@ -192,7 +201,15 @@ class VersionWorkflowService
         ?string $transition = null,
         array $params = []
     ) {
-        $object = $this->applyTransition($object, $workflowName, $transition);
+        $marking = null;
+
+        if (isset($params['marking'])) {
+            $marking = $params['marking'];
+
+            unset($params['marking']);
+        }
+
+        $object = $this->applyTransition($object, $workflowName, $transition, $marking);
 
         return $this->transformToVersionWorkflowModel($object, $workflowName, $params);
     }
