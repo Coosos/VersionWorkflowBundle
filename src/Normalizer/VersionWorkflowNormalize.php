@@ -4,22 +4,17 @@ namespace Coosos\VersionWorkflowBundle\Normalizer;
 
 use ArrayIterator;
 use Coosos\VersionWorkflowBundle\Event\PostNormalizeEvent;
-use Coosos\VersionWorkflowBundle\Event\PreDeserializeEvent;
 use Coosos\VersionWorkflowBundle\Event\PreNormalizeEvent;
-use Coosos\VersionWorkflowBundle\Event\PreSerializeEvent;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
-use ReflectionClass;
 use ReflectionException;
-use ReflectionProperty;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Normalizer\PropertyNormalizer;
 
 /**
  * Class VersionWorkflowNormalize
@@ -27,7 +22,7 @@ use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
  * @package Coosos\VersionWorkflowBundle\Normalizer
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInterface
+class VersionWorkflowNormalize extends PropertyNormalizer implements NormalizerInterface
 {
     /**
      * @var EventDispatcherInterface
@@ -41,7 +36,6 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
         EventDispatcherInterface $eventDispatcher,
         ClassMetadataFactoryInterface $classMetadataFactory = null,
         NameConverterInterface $nameConverter = null,
-        PropertyAccessorInterface $propertyAccessor = null,
         PropertyTypeExtractorInterface $propertyTypeExtractor = null,
         ClassDiscriminatorResolverInterface $classDiscriminatorResolver = null,
         callable $objectClassResolver = null,
@@ -50,7 +44,6 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
         parent::__construct(
             $classMetadataFactory,
             $nameConverter,
-            $propertyAccessor,
             $propertyTypeExtractor,
             $classDiscriminatorResolver,
             $objectClassResolver,
@@ -131,19 +124,34 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
                         $arrayCopy = $value['iterator']['arrayCopy'];
                         foreach ($arrayCopy as $key => $arrayCopyValue) {
                             if (is_array($arrayCopyValue) && isset($arrayCopyValue['__class_name'])) {
-                                $arrayCopy[$key] = $this->denormalize($arrayCopyValue, $arrayCopyValue['__class_name'], $format, $context);
+                                $arrayCopy[$key] = $this->denormalize(
+                                    $arrayCopyValue,
+                                    $arrayCopyValue['__class_name'],
+                                    $format,
+                                    $context
+                                );
                             }
                         }
 
                         $data[$attribute] = $arrayCopy;
                     } else {
-                        $data[$attribute] = $this->denormalizeRecursive($value, $value['__class_name'], $format, $context);
+                        $data[$attribute] = $this->denormalizeRecursive(
+                            $value,
+                            $value['__class_name'],
+                            $format,
+                            $context
+                        );
                     }
                 } elseif (is_array($value) && !isset($value['__class_name'])) {
                     $arrayCopy = $value;
                     foreach ($arrayCopy as $key => $arrayCopyValue) {
                         if (is_array($arrayCopyValue) && isset($arrayCopyValue['__class_name'])) {
-                            $arrayCopy[$key] = $this->denormalizeRecursive($arrayCopyValue, $arrayCopyValue['__class_name'], $format, $context);
+                            $arrayCopy[$key] = $this->denormalizeRecursive(
+                                $arrayCopyValue,
+                                $arrayCopyValue['__class_name'],
+                                $format,
+                                $context
+                            );
                         }
                     }
 
@@ -153,49 +161,5 @@ class VersionWorkflowNormalize extends ObjectNormalizer implements NormalizerInt
         }
 
         return parent::denormalize($data, $class, $format, $context);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getAttributeValue($object, $attribute, $format = null, array $context = [])
-    {
-        try {
-            $reflectionProperty = $this->getReflectionProperty($object, $attribute);
-        } catch (ReflectionException $reflectionException) {
-            return null;
-        }
-
-        // Override visibility
-        if (!$reflectionProperty->isPublic()) {
-            $reflectionProperty->setAccessible(true);
-        }
-
-        return $reflectionProperty->getValue($object);
-    }
-
-    /**
-     * Get reflection property
-     *
-     * @param string|object $classOrObject
-     * @param string        $attribute
-     *
-     * @return ReflectionProperty
-     * @throws ReflectionException
-     */
-    private function getReflectionProperty($classOrObject, string $attribute): ReflectionProperty
-    {
-        $reflectionClass = new ReflectionClass($classOrObject);
-        while (true) {
-            try {
-                return $reflectionClass->getProperty($attribute);
-            } catch (ReflectionException $e) {
-                if (!$reflectionClass = $reflectionClass->getParentClass()) {
-                    throw $e;
-                }
-            }
-        }
-
-        return null;
     }
 }
