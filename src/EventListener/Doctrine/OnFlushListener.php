@@ -188,6 +188,8 @@ class OnFlushListener
             return false;
         }
 
+        $this->detachDeletionsHash[] = spl_object_hash($entity);
+
         if ($entity instanceof PersistentCollection) {
             $isDetach = $this->checkDetachDeletionsRecursive($args, $entity->getOwner());
             if ($isDetach) {
