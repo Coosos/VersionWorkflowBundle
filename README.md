@@ -22,3 +22,4 @@ If an old entity yet exists the same identifier, it will be replaced while keepi
 * [Installation](docs/install.md)
 * [Configuration](docs/config.md)
 * [Basic usage](docs/usage.md)
+* [Use with doctrine](docs/doctrine.md)
