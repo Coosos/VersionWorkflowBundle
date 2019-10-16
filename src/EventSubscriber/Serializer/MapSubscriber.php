@@ -86,15 +86,9 @@ class MapSubscriber implements EventSubscriberInterface
         /** @var VersionWorkflowTrait $object */
         $object = $event->getObject();
         if ($this->classContains->hasTrait($object, VersionWorkflowTrait::class)) {
-            $this->alreadyHashObject = [];
-            dump($object);
-            $object = $this->parseDeserialize($object, $object->getVersionWorkflowMap());
-//            $object->getAuthor()->setUsername('TOTO');
-            dump($object);
-            die;
-
-//            dump($event->getObject());
-            $this->alreadyHashObject = [];
+            $map = $object->getVersionWorkflowMap();
+            $this->parseDeserialize($object, $map);
+//            $object->setVersionWorkflowMap($map); TODO
         }
     }
 
@@ -165,7 +159,7 @@ class MapSubscriber implements EventSubscriberInterface
      */
     protected function parseDeserialize(
         $object,
-        array $map,
+        array &$map,
         string $currentMap = 'root',
         array &$already = []
     ) {
@@ -174,6 +168,7 @@ class MapSubscriber implements EventSubscriberInterface
         }
 
         $already[$map[$currentMap]] = $object;
+        unset($map[$currentMap]);
 
         $properties = (new ReflectionClass($object))->getProperties(
             ReflectionProperty::IS_PUBLIC |
@@ -196,6 +191,8 @@ class MapSubscriber implements EventSubscriberInterface
                         $already
                     )
                 );
+
+                unset($map[sprintf('%s,%s', $currentMap, $propertyName)]);
             } elseif ((is_array($propertyValue) || $propertyValue instanceof ArrayAccess)
                 && $propertyName !== 'versionWorkflowMap'
             ) {
@@ -222,7 +219,12 @@ class MapSubscriber implements EventSubscriberInterface
                 }
 
                 $property->setValue($object, $list);
-            } elseif ($propertyValue === null) {
+            } elseif ($propertyValue === null
+                && isset($map[$currentMap . ',' . $propertyName])
+                && isset($already[$map[$currentMap . ',' . $propertyName]])
+            ) {
+                $property->setValue($object, $already[$map[$currentMap . ',' . $propertyName]]);
+                unset($map[$currentMap . ',' . $propertyName]);
             }
         }
 
