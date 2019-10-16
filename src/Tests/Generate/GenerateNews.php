@@ -65,13 +65,13 @@ class GenerateNews
 
         $news->setTitle($this->getRamdomText(50));
         $news->setContent($this->getRamdomText(200));
-        $news->setAuthor($generateUser->generate());
 
         $comments = [];
         for ($i = 0; $i < 5; $i++) {
             $comments[] = $generateComment->generate(false, $news, $generateUser->generate());
         }
 
+        $news->setAuthor($comments[0]->getUers());
         $news->setComments($comments);
 
         return $news;

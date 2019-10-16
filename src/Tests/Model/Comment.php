@@ -2,6 +2,10 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
+use DateTime;
+use Exception;
+use JMS\Serializer\Annotation as Serializer;
+
 /**
  * Class Comment
  *
@@ -12,37 +16,47 @@ class Comment
 {
     /**
      * @var int|null
+     *
+     * @Serializer\Type("int")
      */
     private $id;
 
     /**
      * @var News|null
+     *
+     * @Serializer\Type("Coosos\VersionWorkflowBundle\Tests\Model\News")
      */
     private $news;
 
     /**
      * @var User|null
+     *
+     * @Serializer\Type("Coosos\VersionWorkflowBundle\Tests\Model\User")
      */
     private $user;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     private $content;
 
     /**
-     * @var \DateTime
+     * @var DateTime
+     *
+     * @Serializer\Type("DateTime")
      */
     private $createdAt;
 
     /**
      * Comment constructor.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct()
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new DateTime();
     }
 
     /**
@@ -122,7 +136,7 @@ class Comment
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
     public function getCreatedAt()
     {
@@ -130,7 +144,7 @@ class Comment
     }
 
     /**
-     * @param \DateTime $createdAt
+     * @param DateTime $createdAt
      * @return Comment
      */
     public function setCreatedAt($createdAt): Comment

@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\Tests\Generate;
 
 use Coosos\VersionWorkflowBundle\Tests\Model\Comment;
 use Coosos\VersionWorkflowBundle\Tests\Utils\Random;
+use Exception;
 
 /**
  * Class GenerateComment
@@ -19,7 +20,9 @@ class GenerateComment
      * @param bool       $withId
      * @param mixed|null $news
      * @param mixed|null $user
+     *
      * @return Comment
+     * @throws Exception
      */
     public function generate($withId = false, $news = null, $user = null)
     {

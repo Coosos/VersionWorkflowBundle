@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Model;
 
+use JMS\Serializer\Annotation as Serializer;
+
 /**
  * Trait VersionWorkflowTrait
  *
@@ -21,8 +23,17 @@ trait VersionWorkflowTrait
 
     /**
      * @var bool
+     *
+     * @Serializer\Type("bool")
      */
     protected $versionWorkflowFakeEntity = false;
+
+    /**
+     * @var array
+     *
+     * @Serializer\Type("array")
+     */
+    protected $versionWorkflowMap = [];
 
     /**
      * @return VersionWorkflowModel|null
@@ -79,5 +90,21 @@ trait VersionWorkflowTrait
         $this->versionWorkflowFakeEntity = $versionWorkflowFakeEntity;
 
         return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getVersionWorkflowMap(): array
+    {
+        return $this->versionWorkflowMap;
+    }
+
+    /**
+     * @param array $versionWorkflowMap
+     */
+    public function setVersionWorkflowMap(array $versionWorkflowMap): void
+    {
+        $this->versionWorkflowMap = $versionWorkflowMap;
     }
 }
