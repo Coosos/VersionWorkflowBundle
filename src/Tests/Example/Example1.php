@@ -13,27 +13,35 @@ use Exception;
  */
 class Example1 extends AbstractExample
 {
-    protected $object;
-
     /**
      * @return News
      * @throws Exception
      */
     public function generate()
     {
+        return $this->generateObject();
+    }
+
+    /**
+     * @return mixed
+     * @throws Exception
+     */
+    public function resultDeserialied()
+    {
+        return $this->generateObject();
+    }
+
+    /**
+     * @return News
+     * @throws Exception
+     */
+    protected function generateObject()
+    {
         $news = new News();
         $news->setTitle('Hello world');
         $news->setContent('This day is ...');
         $news->setCreatedAt(new \DateTime('2019-10-14T20:54:59+00:00'));
 
-        return $this->object = $news;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function resultDeserialied()
-    {
-        return $this->object;
+        return $news;
     }
 }
