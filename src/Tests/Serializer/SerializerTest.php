@@ -6,6 +6,7 @@ use Coosos\VersionWorkflowBundle\EventSubscriber\Serializer\MapSubscriber;
 use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use Generator;
 use JMS\Serializer\EventDispatcher\EventDispatcher;
 use JMS\Serializer\SerializerBuilder;
 use PHPUnit\Framework\TestCase;
@@ -36,10 +37,14 @@ class SerializerTest extends TestCase
 
     /**
      * Example 1
+     *
+     * @dataProvider getExampleProviderList
+     *
+     * @param int $nb
      */
-    public function testSerializeExample1()
+    public function testSerializeExample($nb)
     {
-        $example = $this->getExample(1);
+        $example = $this->getExample($nb);
         $build = $this->builder->build();
         $newsSerialized = $build->serialize($example->generate(), 'json');
         $newsDeserialized = $build->deserialize($newsSerialized, News::class, 'json');
@@ -48,29 +53,14 @@ class SerializerTest extends TestCase
     }
 
     /**
-     * Example 2
+     * @return Generator
      */
-    public function testSerializeExample2()
+    public function getExampleProviderList()
     {
-        $example = $this->getExample(2);
-        $build = $this->builder->build();
-        $newsSerialized = $build->serialize($example->generate(), 'json');
-        $newsDeserialized = $build->deserialize($newsSerialized, News::class, 'json');
-
-        $this->assertEquals($newsDeserialized, $example->resultDeserialied());
-    }
-
-    /**
-     * Example 3
-     */
-    public function testSerializeExample3()
-    {
-        $example = $this->getExample(3);
-        $build = $this->builder->build();
-        $newsSerialized = $build->serialize($example->generate(), 'json');
-        $newsDeserialized = $build->deserialize($newsSerialized, News::class, 'json');
-
-        $this->assertEquals($newsDeserialized, $example->resultDeserialied());
+        yield [1];
+        yield [2];
+        yield [3];
+        yield [4];
     }
 
     /**

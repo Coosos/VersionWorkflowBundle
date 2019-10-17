@@ -8,7 +8,10 @@ use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Collections\ArrayCollection;
 use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 use JMS\Serializer\EventDispatcher\ObjectEvent;
+use JMS\Serializer\EventDispatcher\PreDeserializeEvent;
 use JMS\Serializer\EventDispatcher\PreSerializeEvent;
+use JMS\Serializer\Metadata\StaticPropertyMetadata;
+use JMS\Serializer\Visitor\SerializationVisitorInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionProperty;
@@ -21,6 +24,8 @@ use ReflectionProperty;
  */
 class MapSubscriber implements EventSubscriberInterface
 {
+    const ATTR_DATA_NAME = 'version_workflow_mappings';
+
     /**
      * @var array
      */
@@ -37,6 +42,16 @@ class MapSubscriber implements EventSubscriberInterface
     private $classContains;
 
     /**
+     * @var mixed|null
+     */
+    private $currentObject;
+
+    /**
+     * @var array
+     */
+    private $currentMappings;
+
+    /**
      * TransformRelationSubscriber constructor.
      *
      * @param ClassContains $classContains
@@ -44,6 +59,8 @@ class MapSubscriber implements EventSubscriberInterface
     public function __construct(ClassContains $classContains)
     {
         $this->classContains = $classContains;
+        $this->currentObject = null;
+        $this->currentMappings = [];
     }
 
     /**
@@ -60,6 +77,14 @@ class MapSubscriber implements EventSubscriberInterface
                 'event' => 'serializer.post_deserialize',
                 'method' => 'onPostDeserialize',
             ],
+            [
+                'event' => 'serializer.post_serialize',
+                'method' => 'onPostSerialize',
+            ],
+            [
+                'event' => 'serializer.pre_deserialize',
+                'method' => 'onPreDeserialize',
+            ],
         ];
     }
 
@@ -70,9 +95,37 @@ class MapSubscriber implements EventSubscriberInterface
      */
     public function onPreSerialize(PreSerializeEvent $event)
     {
-        if ($this->classContains->hasTrait($event->getObject(), VersionWorkflowTrait::class)) {
+        if ($this->classContains->hasTrait($event->getObject(), VersionWorkflowTrait::class)
+            && $event->getContext()->getDepth() === 1
+        ) {
             $this->alreadyHashObject = [];
-            $event->getObject()->setVersionWorkflowMap($this->buildMap($event->getObject()));
+            $this->currentObject = $event->getObject();
+            $this->currentMappings = $this->optimizeMappingSerialize($this->buildMap($event->getObject()));
+        }
+    }
+
+    /**
+     * @param ObjectEvent $event
+     */
+    public function onPostSerialize(ObjectEvent $event)
+    {
+        if ($event->getObject() === $this->currentObject) {
+            /** @var SerializationVisitorInterface $visitor */
+            $visitor = $event->getVisitor();
+            $visitor->visitProperty(
+                new StaticPropertyMetadata('', self::ATTR_DATA_NAME, $this->currentMappings),
+                $this->currentMappings
+            );
+        }
+    }
+
+    /**
+     * @param PreDeserializeEvent $event
+     */
+    public function onPreDeserialize(PreDeserializeEvent $event)
+    {
+        if ($event->getContext()->getDepth() === 1 && isset($event->getData()[self::ATTR_DATA_NAME])) {
+            $this->currentMappings = $event->getData()[self::ATTR_DATA_NAME];
         }
     }
 
@@ -85,10 +138,11 @@ class MapSubscriber implements EventSubscriberInterface
     {
         /** @var VersionWorkflowTrait $object */
         $object = $event->getObject();
-        if ($this->classContains->hasTrait($object, VersionWorkflowTrait::class)) {
-            $map = $object->getVersionWorkflowMap();
+        if ($this->classContains->hasTrait($object, VersionWorkflowTrait::class)
+            && $event->getContext()->getDepth() === 0
+        ) {
+            $map = $this->currentMappings;
             $this->parseDeserialize($object, $map);
-//            $object->setVersionWorkflowMap($map); TODO
         }
     }
 
@@ -132,7 +186,9 @@ class MapSubscriber implements EventSubscriberInterface
                     $map,
                     $this->buildMap($propertyValue, sprintf('%s,%s', $prev, $property->getName()))
                 );
-            } elseif (is_array($propertyValue) || $propertyValue instanceof ArrayAccess) {
+            } elseif ((is_array($propertyValue) || $propertyValue instanceof ArrayAccess)
+                && $property->getName() !== 'versionWorkflowMap'
+            ) {
                 foreach ($propertyValue as $key => $item) {
                     $map = array_merge(
                         $map,
@@ -145,6 +201,28 @@ class MapSubscriber implements EventSubscriberInterface
         return $map;
     }
 
+    /**
+     * Optmize mapping
+     *
+     * @param array $mappings
+     *
+     * @return array
+     */
+    protected function optimizeMappingSerialize(array $mappings): array
+    {
+        $tempMapping = $newMapping = [];
+
+        $i = 0;
+        foreach ($mappings as $path => $mapping) {
+            if (!isset($tempMapping[$mapping])) {
+                $tempMapping[$mapping] = ++$i;
+            }
+
+            $newMapping[$path] = $tempMapping[$mapping];
+        }
+
+        return $newMapping;
+    }
 
     /**
      * Parse deserialize

@@ -29,13 +29,6 @@ trait VersionWorkflowTrait
     protected $versionWorkflowFakeEntity = false;
 
     /**
-     * @var array
-     *
-     * @Serializer\Type("array")
-     */
-    protected $versionWorkflowMap = [];
-
-    /**
      * @return VersionWorkflowModel|null
      */
     public function getVersionWorkflow()
@@ -90,21 +83,5 @@ trait VersionWorkflowTrait
         $this->versionWorkflowFakeEntity = $versionWorkflowFakeEntity;
 
         return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getVersionWorkflowMap(): array
-    {
-        return $this->versionWorkflowMap;
-    }
-
-    /**
-     * @param array $versionWorkflowMap
-     */
-    public function setVersionWorkflowMap(array $versionWorkflowMap): void
-    {
-        $this->versionWorkflowMap = $versionWorkflowMap;
     }
 }
