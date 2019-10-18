@@ -8,9 +8,6 @@ services:
     resource: '../../'
     exclude: '../../{Entity,Repository}'
 
-  Coosos\VersionWorkflowBundle\Service\SerializerService:
-    public: true
-
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }

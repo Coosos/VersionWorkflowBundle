@@ -6,6 +6,7 @@ use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -17,9 +18,9 @@ use Symfony\Component\Workflow\Registry;
 class VersionWorkflowService
 {
     /**
-     * @var SerializerService
+     * @var SerializerInterface
      */
-    private $serializerService;
+    private $serializer;
 
     /**
      * @var Registry
@@ -34,18 +35,18 @@ class VersionWorkflowService
     /**
      * VersionWorkflowService constructor.
      *
-     * @param SerializerService $serializerService
-     * @param Registry $workflows
-     * @param ClassContains $classContains
+     * @param SerializerInterface $serializer
+     * @param Registry            $workflows
+     * @param ClassContains       $classContains
      */
     public function __construct(
-        SerializerService $serializerService,
+        SerializerInterface $serializer,
         Registry $workflows,
         ClassContains $classContains
     ) {
-        $this->serializerService = $serializerService;
         $this->workflows = $workflows;
         $this->classContains = $classContains;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -89,11 +90,10 @@ class VersionWorkflowService
      *
      * @param VersionWorkflowTrait|object $object
      * @param string|null                 $workflowName
-     * @param array                       $params
      *
      * @return VersionWorkflowModel
      */
-    public function transformToVersionWorkflowModel($object, ?string $workflowName = null, $params = [])
+    public function transformToVersionWorkflowModel($object, ?string $workflowName = null)
     {
         $versionWorkflow = new VersionWorkflow();
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
@@ -105,7 +105,7 @@ class VersionWorkflowService
             $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
-        $versionWorkflow->setObjectSerialized($this->cloneAndSerializeObject($object, $params));
+        $versionWorkflow->setObjectSerialized($this->serializer->serialize($object, 'json'));
 
         $object->setVersionWorkflow($versionWorkflow);
         $object->setWorkflowName($workflowName);
@@ -117,16 +117,15 @@ class VersionWorkflowService
      * Transform VersionWorkflowModel list to deserialized entity
      *
      * @param VersionWorkflowModel[] $versionWorkflows
-     * @param array $params
      *
      * @return array
      */
-    public function transformVersionWorkflowListToObject(array $versionWorkflows, array $params = [])
+    public function transformVersionWorkflowListToObject(array $versionWorkflows)
     {
         $objects = [];
 
         foreach ($versionWorkflows as $versionWorkflow) {
-            $objects[] = $this->transformToObject($versionWorkflow, $params);
+            $objects[] = $this->transformToObject($versionWorkflow);
         }
 
         return $objects;
@@ -136,36 +135,21 @@ class VersionWorkflowService
      * Transform VersionWorkflowModel to deserialized entity
      *
      * @param VersionWorkflowModel|object $object
-     * @param array                       $params
      *
      * @return VersionWorkflowTrait|mixed
      */
-    public function transformToObject($object, array $params = [])
+    public function transformToObject($object)
     {
-        $entity = $this->serializerService->deserialize(
+        $entity = $this->serializer->deserialize(
             $object->getObjectSerialized(),
             $object->getModelName(),
-            'json',
-            $params
+            'json'
         );
 
         $entity->setVersionWorkflowFakeEntity(true);
         $entity->setVersionWorkflow($object);
 
         return $entity;
-    }
-
-    /**
-     * Clone and serialize object
-     *
-     * @param mixed $object
-     * @param array $params
-     *
-     * @return string
-     */
-    public function cloneAndSerializeObject($object, $params = [])
-    {
-        return $this->serializerService->serialize($object, 'json', $params);
     }
 
     /**
@@ -194,7 +178,7 @@ class VersionWorkflowService
 
         $object = $this->applyTransition($object, $workflowName, $transition, $marking);
 
-        return $this->transformToVersionWorkflowModel($object, $workflowName, $params);
+        return $this->transformToVersionWorkflowModel($object, $workflowName);
     }
 
     /**

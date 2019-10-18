@@ -3,7 +3,6 @@
 namespace Coosos\VersionWorkflowBundle\Tests;
 
 use Coosos\VersionWorkflowBundle\EventSubscriber\Serializer\MapSubscriber;
-use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
@@ -47,11 +46,10 @@ abstract class AbstractTestCase extends TestCase
 
         $this->jmsSerializer = $builder->build();
 
-        $serializerService = new SerializerService($this->jmsSerializer);
         $registry = $this->getRegistryMock();
         $classContains = new ClassContains();
         $this->versionWorkflowService = new VersionWorkflowService(
-            $serializerService,
+            $this->jmsSerializer,
             $registry,
             $classContains
         );
