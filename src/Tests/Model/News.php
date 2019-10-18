@@ -66,6 +66,13 @@ class News
     private $createdAt;
 
     /**
+     * @var string
+     *
+     * @Serializer\Type("string")
+     */
+    private $marking;
+
+    /**
      * News constructor.
      *
      * @throws Exception
@@ -205,6 +212,26 @@ class News
     public function setCreatedAt($createdAt): News
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMarking()
+    {
+        return $this->marking;
+    }
+
+    /**
+     * @param string $marking
+     *
+     * @return News
+     */
+    public function setMarking($marking): News
+    {
+        $this->marking = $marking;
 
         return $this;
     }

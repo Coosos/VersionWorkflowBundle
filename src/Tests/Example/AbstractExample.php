@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Example;
 
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+
 /**
  * Class AbstractExample
  *
@@ -16,7 +18,7 @@ abstract class AbstractExample
     protected $object;
 
     /**
-     * @return mixed
+     * @return VersionWorkflowTrait|mixed
      */
     abstract public function generate();
 

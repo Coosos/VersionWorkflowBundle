@@ -95,7 +95,8 @@ class MapSubscriber implements EventSubscriberInterface
      */
     public function onPreSerialize(PreSerializeEvent $event)
     {
-        if ($this->classContains->hasTrait($event->getObject(), VersionWorkflowTrait::class)
+        if (is_object($event->getObject())
+            && $this->classContains->hasTrait($event->getObject(), VersionWorkflowTrait::class)
             && $event->getContext()->getDepth() === 1
         ) {
             $this->alreadyHashObject = [];

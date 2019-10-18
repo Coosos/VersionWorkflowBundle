@@ -14,7 +14,8 @@ use Exception;
 class Example1 extends AbstractExample
 {
     /**
-     * @return News
+     * {@inheritDoc}
+     *
      * @throws Exception
      */
     public function generate()
