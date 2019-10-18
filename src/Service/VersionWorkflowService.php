@@ -6,8 +6,6 @@ use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
-use Coosos\VersionWorkflowBundle\Utils\CloneObject;
-use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -34,28 +32,20 @@ class VersionWorkflowService
     private $classContains;
 
     /**
-     * @var CloneObject
-     */
-    private $cloneObject;
-
-    /**
      * VersionWorkflowService constructor.
      *
      * @param SerializerService $serializerService
      * @param Registry $workflows
      * @param ClassContains $classContains
-     * @param CloneObject $cloneObject
      */
     public function __construct(
         SerializerService $serializerService,
         Registry $workflows,
-        ClassContains $classContains,
-        CloneObject $cloneObject
+        ClassContains $classContains
     ) {
         $this->serializerService = $serializerService;
         $this->workflows = $workflows;
         $this->classContains = $classContains;
-        $this->cloneObject = $cloneObject;
     }
 
     /**
@@ -66,7 +56,7 @@ class VersionWorkflowService
      *
      * @return VersionWorkflowTrait|mixed
      */
-    public function applyTransition($object, ?string $workflowName, $transition = null, $marking = null)
+    public function applyTransition($object, ?string $workflowName = null, $transition = null, $marking = null)
     {
         $workflow = $this->workflows->get($object, $workflowName);
 
@@ -102,9 +92,8 @@ class VersionWorkflowService
      * @param array                       $params
      *
      * @return VersionWorkflowModel
-     * @throws ReflectionException
      */
-    public function transformToVersionWorkflowModel($object, ?string $workflowName, $params = [])
+    public function transformToVersionWorkflowModel($object, ?string $workflowName = null, $params = [])
     {
         $versionWorkflow = new VersionWorkflow();
         $versionWorkflow->setWorkflowName($this->getWorkflowName($object, $workflowName));
@@ -131,7 +120,6 @@ class VersionWorkflowService
      * @param array $params
      *
      * @return array
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function transformVersionWorkflowListToObject(array $versionWorkflows, array $params = [])
     {
@@ -151,7 +139,6 @@ class VersionWorkflowService
      * @param array                       $params
      *
      * @return VersionWorkflowTrait|mixed
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function transformToObject($object, array $params = [])
     {
@@ -175,13 +162,10 @@ class VersionWorkflowService
      * @param array $params
      *
      * @return string
-     * @throws ReflectionException
      */
     public function cloneAndSerializeObject($object, $params = [])
     {
-        $objectCloned = $this->cloneObject->cloneObject($object, ['versionWorkflow']);
-
-        return $this->serializerService->serialize($objectCloned, 'json', $params);
+        return $this->serializerService->serialize($object, 'json', $params);
     }
 
     /**
@@ -193,7 +177,6 @@ class VersionWorkflowService
      * @param array                                     $params
      *
      * @return VersionWorkflowModel
-     * @throws ReflectionException
      */
     public function applyTransitionAndTransformToVersionWorkflow(
         $object,
