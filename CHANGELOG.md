@@ -1,11 +1,13 @@
 # 0.1.0
 
+* Update PHP required to ``^7.2``
 * Use JMS Serializer instead of Symfony Serializer
-    * Create a MapSubscriber class to create a mapping of the object to 
+    * Create a ``MapSubscriber`` class to create a mapping of the object to 
       restore the relationships of a deserialized object
     * Add test for testing MapSubscriber
 * Remove old / unused code
 * Add test for ``VersionWorkflowService``
+* Remove ``SerializerService`` and inject directly JMS in ``VersionWorkflowService``
 
 # 0.0.1 
 
