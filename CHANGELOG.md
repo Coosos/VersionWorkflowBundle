@@ -7,7 +7,7 @@
     * Add test for testing MapSubscriber
 * Remove old / unused code
 * Add test for ``VersionWorkflowService``
-* Remove ``SerializerService`` and inject directly JMS in ``VersionWorkflowService``
+* Remove ``SerializerService`` and inject directly JMS Serializer Interface
 
 # 0.0.1
 
