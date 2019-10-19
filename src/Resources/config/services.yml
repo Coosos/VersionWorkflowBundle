@@ -8,8 +8,6 @@ services:
     resource: '../../'
     exclude: '../../{Entity,Repository}'
 
-  JMS\Serializer\SerializerInterface: '@jms_serializer.serializer'
-
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }
@@ -19,5 +17,7 @@ services:
       - { name: doctrine.event_listener, event: prePersist, priority: -1000 }
 
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
+    arguments:
+      $serializer: '@jms_serializer.serializer'
     tags:
       - { name: doctrine.event_listener, event: onFlush }
