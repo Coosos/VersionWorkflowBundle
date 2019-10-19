@@ -13,11 +13,15 @@ trait VersionWorkflowTrait
 {
     /**
      * @var VersionWorkflowModel|null
+     *
+     * @Serializer\Type("Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel")
      */
     protected $versionWorkflow;
 
     /**
      * @var string|null
+     *
+     * @Serializer\Type("string")
      */
     protected $workflowName;
 
