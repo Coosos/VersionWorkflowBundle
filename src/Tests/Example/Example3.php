@@ -2,9 +2,6 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Example;
 
-use Coosos\VersionWorkflowBundle\Tests\Generate\GenerateComment;
-use Coosos\VersionWorkflowBundle\Tests\Generate\GenerateUser;
-use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
 use Exception;
@@ -24,15 +21,17 @@ class Example3 extends AbstractExample
      */
     public function generate()
     {
-        return $this->object = $this->generateObject();
+        return $this->generateObject();
     }
 
     /**
      * {@inheritDoc}
+     *
+     * @throws Exception
      */
     public function resultDeserialied()
     {
-        return $this->object;
+        return $this->generateObject();
     }
 
     /**
@@ -42,9 +41,6 @@ class Example3 extends AbstractExample
      */
     protected function generateObject()
     {
-        $generateComment = new GenerateComment();
-        $generateUser = new GenerateUser();
-
         $news = $this->generateNews(
             'Hello world',
             'This day is ...',
@@ -55,13 +51,16 @@ class Example3 extends AbstractExample
 
         $comments = new ArrayCollection();
         for ($i = 0; $i < 5; $i++) {
-            $user = $generateUser->generate();
-            $comment = $generateComment->generate(false, $news, $user);
-            $comment->setCreatedAt(new DateTime('2019-10-14T20:23:59+00:00'));
+            $comment = $this->generateComment($news, 'content' . $i, new DateTime('2019-10-14T20:23:59+00:00'));
             $comments->add($comment);
-            if ($i === 0) {
-                $news->setAuthor($user);
-            }
+
+//            $user = $generateUser->generate();
+//            $comment = $generateComment->generate(false, $news, $user);
+//            $comment->setCreatedAt(new DateTime('2019-10-14T20:23:59+00:00'));
+//            $comments->add($comment);
+//            if ($i === 0) {
+//                $news->setAuthor($user);
+//            }
         }
 
         $news->setComments($comments);

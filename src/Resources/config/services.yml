@@ -8,6 +8,8 @@ services:
     resource: '../../'
     exclude: '../../{Entity,Repository}'
 
+  JMS\Serializer\SerializerInterface: '@jms_serializer.serializer'
+
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }

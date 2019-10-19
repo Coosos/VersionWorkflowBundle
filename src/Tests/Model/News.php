@@ -168,7 +168,7 @@ class News
     }
 
     /**
-     * @param Comment[]|null $comments
+     * @param ArrayCollection|null $comments
      * @return News
      */
     public function setComments($comments): News

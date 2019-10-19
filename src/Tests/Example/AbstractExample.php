@@ -3,6 +3,7 @@
 namespace Coosos\VersionWorkflowBundle\Tests\Example;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Tests\Model\Comment;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use Coosos\VersionWorkflowBundle\Tests\Model\User;
 use DateTime;
@@ -37,20 +38,6 @@ abstract class AbstractExample
     abstract protected function generateObject();
 
     /**
-     * Generate user
-     *
-     * @param string   $username
-     * @param string   $email
-     * @param int|null $id
-     *
-     * @return User
-     */
-    protected function generateUser(string $username, string $email, ?int $id = null): User
-    {
-        return (new User())->setUsername($username)->setEmail($email)->setId($id);
-    }
-
-    /**
      * Generate news
      *
      * @param string    $title
@@ -75,6 +62,47 @@ abstract class AbstractExample
             ->setContent($content)
             ->setCreatedAt($createdAt)
             ->setAuthor($author);
+    }
+
+    /**
+     * Generate user
+     *
+     * @param string   $username
+     * @param string   $email
+     * @param int|null $id
+     *
+     * @return User
+     */
+    protected function generateUser(string $username, string $email, ?int $id = null): User
+    {
+        return (new User())->setUsername($username)->setEmail($email)->setId($id);
+    }
+
+    /**
+     * Generate comment
+     *
+     * @param News      $news
+     * @param string    $content
+     * @param DateTime  $createdAt
+     * @param int|null  $id
+     * @param User|null $user
+     *
+     * @return Comment
+     * @throws Exception
+     */
+    protected function generateComment(
+        News $news,
+        string $content,
+        DateTime $createdAt,
+        ?int $id = null,
+        ?User $user = null
+    ): Comment {
+        return (new Comment())
+            ->setId($id)
+            ->setContent($content)
+            ->setCreatedAt($createdAt)
+            ->setUser($user)
+            ->setNews($news);
     }
 
     /**
