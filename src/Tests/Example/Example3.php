@@ -18,20 +18,40 @@ use Exception;
 class Example3 extends AbstractExample
 {
     /**
-     * @return mixed
+     * {@inheritDoc}
+     *
      * @throws Exception
      */
     public function generate()
     {
+        return $this->object = $this->generateObject();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function resultDeserialied()
+    {
+        return $this->object;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @throws Exception
+     */
+    protected function generateObject()
+    {
         $generateComment = new GenerateComment();
         $generateUser = new GenerateUser();
 
-        $news = new News();
-        $news->setId(5);
-
-        $news->setTitle('Hello world');
-        $news->setContent('This day is ...');
-        $news->setCreatedAt(new DateTime('2019-10-14T20:54:59+00:00'));
+        $news = $this->generateNews(
+            'Hello world',
+            'This day is ...',
+            new DateTime('2019-10-14T20:54:59+00:00'),
+            null,
+            5
+        );
 
         $comments = new ArrayCollection();
         for ($i = 0; $i < 5; $i++) {
@@ -46,14 +66,6 @@ class Example3 extends AbstractExample
 
         $news->setComments($comments);
 
-        return $this->object = $news;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function resultDeserialied()
-    {
-        return $this->object;
+        return $news;
     }
 }

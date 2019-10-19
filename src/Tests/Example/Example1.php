@@ -2,7 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Example;
 
-use Coosos\VersionWorkflowBundle\Tests\Model\News;
+use DateTime;
 use Exception;
 
 /**
@@ -14,6 +14,21 @@ use Exception;
 class Example1 extends AbstractExample
 {
     /**
+     * @var string
+     */
+    private $newsTitle;
+
+    /**
+     * @var string
+     */
+    private $newsContent;
+
+    /**
+     * @var DateTime
+     */
+    private $newsCreatedAt;
+
+    /**
      * {@inheritDoc}
      *
      * @throws Exception
@@ -24,7 +39,8 @@ class Example1 extends AbstractExample
     }
 
     /**
-     * @return mixed
+     * {@inheritDoc}
+     *
      * @throws Exception
      */
     public function resultDeserialied()
@@ -33,16 +49,24 @@ class Example1 extends AbstractExample
     }
 
     /**
-     * @return News
+     * {@inheritDoc}
+     *
      * @throws Exception
      */
     protected function generateObject()
     {
-        $news = new News();
-        $news->setTitle('Hello world');
-        $news->setContent('This day is ...');
-        $news->setCreatedAt(new \DateTime('2019-10-14T20:54:59+00:00'));
+        if (!$this->newsTitle) {
+            $this->newsTitle = $this->randomText();
+        }
 
-        return $news;
+        if (!$this->newsContent) {
+            $this->newsContent = $this->randomText();
+        }
+
+        if (!$this->newsCreatedAt) {
+            $this->newsCreatedAt = new DateTime('2019-10-14T20:54:59+00:00');
+        }
+
+        return $this->generateNews($this->newsTitle, $this->newsContent, $this->newsCreatedAt);
     }
 }
