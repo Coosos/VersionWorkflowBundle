@@ -8,6 +8,7 @@
 * Remove old / unused code
 * Add test for ``VersionWorkflowService``
 * Remove ``SerializerService`` and inject directly JMS Serializer Interface
+* Add edgedesign/phpqa with phpunit, phpmd, phpcs and security-checker
 
 # 0.0.1
 
