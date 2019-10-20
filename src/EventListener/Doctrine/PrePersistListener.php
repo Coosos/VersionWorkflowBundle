@@ -23,6 +23,9 @@ use ReflectionProperty;
  *
  * @package Coosos\VersionWorkflowBundle\EventListener\Doctrine
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class PrePersistListener
 {
@@ -114,8 +117,11 @@ class PrePersistListener
      * @return VersionWorkflowTrait|object|null
      * @throws ReflectionException
      */
-    protected function linkFakeModelToDoctrineRecursive(EntityManagerInterface $entityManager, $model, $annotations = [])
-    {
+    protected function linkFakeModelToDoctrineRecursive(
+        EntityManagerInterface $entityManager,
+        $model,
+        $annotations = []
+    ) {
         if (is_null($model)) {
             return $model;
         }
@@ -305,7 +311,7 @@ class PrePersistListener
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
 
             $list = $originalEntity->{$getterMethod}();
-            foreach ($list as $key => $item) {
+            foreach ($list as $item) {
                 foreach ($compare['removed'] as $identifiers) {
                     if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
                         if ($list instanceof Collection) {
@@ -349,8 +355,7 @@ class PrePersistListener
         $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
         $annotationsResults = $this->getAnnotationResults(get_class($originalEntity), $metadataField);
 
-        if (
-            ($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
+        if (($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
                 || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
             && $setterMethod
         ) {

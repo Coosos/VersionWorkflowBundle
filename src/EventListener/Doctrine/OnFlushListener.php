@@ -26,6 +26,9 @@ use Symfony\Component\Workflow\Registry;
  *
  * @package Coosos\VersionWorkflowBundle\EventListener\Doctrine
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class OnFlushListener
 {
@@ -102,6 +105,9 @@ class OnFlushListener
      *
      * @throws ReflectionException
      * @throws ORMException
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function onFlush(OnFlushEventArgs $args)
     {
@@ -126,7 +132,7 @@ class OnFlushListener
 
                         if ($currentPlace) {
                             if (is_array($currentPlace)) {
-                                foreach ($currentPlace as $status => $value) {
+                                foreach (array_keys($currentPlace) as $status) {
                                     if ($this->isAutoMerge($scheduledEntity, $status)) {
                                         $autoMerge = true;
                                         break;
@@ -182,6 +188,8 @@ class OnFlushListener
      * @param VersionWorkflowTrait|mixed $entity
      *
      * @return bool
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function checkDetachDeletionsRecursive(OnFlushEventArgs $args, $entity)
     {
@@ -207,7 +215,7 @@ class OnFlushListener
         }
 
         $meta = $args->getEntityManager()->getClassMetadata(get_class($entity));
-        foreach ($meta->getAssociationMappings() as $fieldName => $associationMapping) {
+        foreach (array_keys($meta->getAssociationMappings()) as $fieldName) {
             if (!$entity->{'get' . ucfirst($fieldName)}() instanceof Collection) {
                 $isDetach = $this->checkDetachDeletionsRecursive($args, $entity->{'get' . ucfirst($fieldName)}());
                 if ($isDetach) {
@@ -225,6 +233,8 @@ class OnFlushListener
      * @param OnFlushEventArgs           $args
      * @param VersionWorkflowTrait|mixed $entity
      * @param string|null                $scheduledType
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function detachRecursive(OnFlushEventArgs $args, $entity, ?string $scheduledType = null)
     {
@@ -237,7 +247,7 @@ class OnFlushListener
         $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
 
-        foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
+        foreach (array_keys($classMetaData->getAssociationMappings()) as $key) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
                 $getCollectionMethod = $entity->{'get' . ucfirst($key)}();
@@ -329,6 +339,8 @@ class OnFlushListener
      * @param EntityManagerInterface $entityManager
      * @param mixed                  $entity
      * @param bool                   $recompute
+     *
+     * @SuppressWarnings(PHPMD.EmptyCatchBlock)
      */
     protected function invokePreUpdateEvent($entityManager, $entity, $recompute = false)
     {

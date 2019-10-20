@@ -2,14 +2,10 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Serializer;
 
-use Coosos\VersionWorkflowBundle\EventSubscriber\Serializer\MapSubscriber;
+use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
 use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
-use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Generator;
-use JMS\Serializer\EventDispatcher\EventDispatcher;
-use JMS\Serializer\SerializerBuilder;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Class SerializerTest
@@ -17,24 +13,8 @@ use PHPUnit\Framework\TestCase;
  * @package Coosos\VersionWorkflowBundle\Tests\Serializer
  * @author  Remy Lescallier <lescallier1@gmail.com>
  */
-class SerializerTest extends TestCase
+class SerializerTest extends AbstractTestCase
 {
-    /**
-     * @var SerializerBuilder
-     */
-    protected $builder;
-
-    /**
-     * Set up
-     */
-    protected function setUp()
-    {
-        $this->builder = SerializerBuilder::create();
-        $this->builder->configureListeners(function (EventDispatcher $dispatcher) {
-            $dispatcher->addSubscriber(new MapSubscriber(new ClassContains()));
-        });
-    }
-
     /**
      * Example 1
      *
@@ -45,7 +25,7 @@ class SerializerTest extends TestCase
     public function testSerializeExample($nb)
     {
         $example = $this->getExample($nb);
-        $build = $this->builder->build();
+        $build = $this->jmsSerializer;
         $newsSerialized = $build->serialize($example->generate(), 'json');
         $newsDeserialized = $build->deserialize($newsSerialized, News::class, 'json');
 

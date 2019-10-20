@@ -1,0 +1,11 @@
+phpqa:
+    analyzedDirs: src
+    buildDir: build/
+    ignoredDirs: build,vendor
+    report: false
+    execution: parallel
+    output: file
+    tools: phpunit:0,phpcs:0,phpmd:0,security-checker:0
+    verbose: true
+    extensions:
+        - php

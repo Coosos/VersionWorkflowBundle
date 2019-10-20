@@ -5,7 +5,6 @@ namespace Coosos\VersionWorkflowBundle\Tests\Service;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
 
-
 /**
  * Class VersionWorkflowServiceTest
  *

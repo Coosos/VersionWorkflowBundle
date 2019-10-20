@@ -15,7 +15,9 @@
     "jms/serializer-bundle": "^3.4"
   },
   "require-dev": {
-    "phpunit/phpunit": "^7.1"
+    "edgedesign/phpqa": "^1.23",
+    "phpunit/phpunit": "^8.4",
+    "sensiolabs/security-checker": "^6.0"
   },
   "license": "GPL-3.0",
   "authors": [
@@ -31,7 +33,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Coosos\\VersionWorkflowBundle\\Tests": "src/Tests"
+      "Coosos\\VersionWorkflowBundle\\Tests\\": "tests/"
     }
   }
 }

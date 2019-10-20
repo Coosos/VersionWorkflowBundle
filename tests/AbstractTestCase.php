@@ -37,7 +37,7 @@ abstract class AbstractTestCase extends TestCase
     /**
      * Set up
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $builder = SerializerBuilder::create();
         $builder->configureListeners(function (EventDispatcher $dispatcher) {

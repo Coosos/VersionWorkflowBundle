@@ -111,7 +111,8 @@ abstract class AbstractExample
      * @param int $n
      * @return string
      */
-    protected function randomText(int $n = 10) {
+    protected function randomText(int $n = 10)
+    {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $randomString = '';
 

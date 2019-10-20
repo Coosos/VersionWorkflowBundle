@@ -155,6 +155,8 @@ class MapSubscriber implements EventSubscriberInterface
      *
      * @return mixed
      * @throws ReflectionException
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function buildMap($object, string $prev = null)
     {
@@ -235,6 +237,8 @@ class MapSubscriber implements EventSubscriberInterface
      *
      * @return mixed
      * @throws ReflectionException
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function parseDeserialize(
         $object,
