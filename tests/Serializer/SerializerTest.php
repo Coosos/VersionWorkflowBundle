@@ -3,7 +3,6 @@
 namespace Coosos\VersionWorkflowBundle\Tests\Serializer;
 
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
-use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use Generator;
 
@@ -40,17 +39,5 @@ class SerializerTest extends AbstractTestCase
         yield [1];
         yield [2];
         yield [3];
-    }
-
-    /**
-     * @param int $number
-     *
-     * @return AbstractExample
-     */
-    protected function getExample(int $number)
-    {
-        $classString = '\Coosos\VersionWorkflowBundle\Tests\Example\Example' . $number;
-
-        return new $classString();
     }
 }

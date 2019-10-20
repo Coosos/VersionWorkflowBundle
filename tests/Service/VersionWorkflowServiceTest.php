@@ -5,6 +5,7 @@ namespace Coosos\VersionWorkflowBundle\Tests\Service;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
+use Generator;
 
 /**
  * Class VersionWorkflowServiceTest
@@ -17,11 +18,15 @@ class VersionWorkflowServiceTest extends AbstractTestCase
 {
     /**
      * Test apply draft transition
+     *
+     * @dataProvider getExampleProviderList
+     *
+     * @param int $nd
      */
-    public function testApplyDraftTransition()
+    public function testApplyDraftTransition(int $nd)
     {
         $marking = 'draft';
-        $example = $this->getExample(1);
+        $example = $this->getExample($nd);
         $news = $example->generate();
         $news = $this->versionWorkflowService->applyTransition($news);
 
@@ -30,18 +35,15 @@ class VersionWorkflowServiceTest extends AbstractTestCase
 
         $this->assertEquals($newsResult->getMarking(), $news->getMarking());
 
-        return [$news, $newsResult];
+        $this->nextTestTransformToVersionWorkflowModel([$news, $newsResult]);
     }
 
     /**
      * Test transfrom to version workflow model
      *
      * @param array $data
-     *
-     * @return array
-     * @depends testApplyDraftTransition
      */
-    public function testTransformToVersionWorkflowModel(array $data)
+    public function nextTestTransformToVersionWorkflowModel(array $data)
     {
         $news = $data[0];
         $newsResult = $data[1];
@@ -57,14 +59,13 @@ class VersionWorkflowServiceTest extends AbstractTestCase
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $news->getWorkflowName());
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $versionWorkflowModel->getWorkflowName());
 
-        return compact('versionWorkflowModel', 'newsResult');
+        $this->nextTestTransformVersionWorkflowToOriginalObject(compact('versionWorkflowModel', 'newsResult'));
     }
 
     /**
      * @param array $data
-     * @depends testTransformToVersionWorkflowModel
      */
-    public function testTransformVersionWorkflowToOriginalObject(array $data)
+    public function nextTestTransformVersionWorkflowToOriginalObject(array $data)
     {
         /** @var VersionWorkflowModel $versionWorkflowModel */
         $versionWorkflowModel = $data['versionWorkflowModel'];
@@ -77,5 +78,15 @@ class VersionWorkflowServiceTest extends AbstractTestCase
         $object = $this->versionWorkflowService->transformToObject($versionWorkflowModel);
 
         $this->assertEquals($newsResult, $object);
+    }
+
+    /**
+     * @return Generator
+     */
+    public function getExampleProviderList()
+    {
+        yield [1];
+        yield [2];
+        yield [3];
     }
 }
