@@ -14,7 +14,7 @@ trait VersionWorkflowTrait
     /**
      * @var VersionWorkflowModel|null
      *
-     * @Serializer\Type("Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel")
+     * @Serializer\Exclude()
      */
     protected $versionWorkflow;
 

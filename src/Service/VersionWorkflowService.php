@@ -108,7 +108,7 @@ class VersionWorkflowService
         $versionWorkflow->setObjectSerialized($this->serializer->serialize($object, 'json'));
 
         $object->setVersionWorkflow($versionWorkflow);
-        $object->setWorkflowName($workflowName);
+        $object->setWorkflowName($this->getWorkflowName($object, $workflowName));
 
         return $versionWorkflow;
     }

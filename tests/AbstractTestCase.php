@@ -24,6 +24,8 @@ use Symfony\Component\Workflow\WorkflowInterface;
  */
 abstract class AbstractTestCase extends TestCase
 {
+    const DEFAULT_WORKFLOW_NAME = 'test_workflow';
+
     /**
      * @var JmsSerializerInterface
      */
@@ -82,7 +84,7 @@ abstract class AbstractTestCase extends TestCase
         $workflowMock = $this->createMock(WorkflowInterface::class);
         $workflowMock->method('getDefinition')->willReturnReference($definitionBuild);
         $workflowMock->method('getMarkingStore')->willReturnReference($markingStore);
-        $workflowMock->method('getName')->willReturn('test_workflow');
+        $workflowMock->method('getName')->willReturn(self::DEFAULT_WORKFLOW_NAME);
 
         $registryMock = $this->createMock(Registry::class);
         $registryMock->method('get')->willReturnReference($workflowMock);

@@ -1,4 +1,11 @@
+# IDE
+.idea/
+
+# Composer
+
 vendor/
-build/
 composer.lock
+
+# Test
+build/
 .phpunit.result.cache
