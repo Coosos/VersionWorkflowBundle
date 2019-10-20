@@ -28,7 +28,7 @@ trait VersionWorkflowTrait
     /**
      * @var bool
      *
-     * @Serializer\Type("bool")
+     * @Serializer\Exclude()
      */
     protected $versionWorkflowFakeEntity = false;
 
