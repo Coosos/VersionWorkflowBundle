@@ -6,6 +6,7 @@ use ArrayAccess;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Collections\ArrayCollection;
+use JMS\Serializer\Context;
 use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 use JMS\Serializer\EventDispatcher\ObjectEvent;
 use JMS\Serializer\EventDispatcher\PreDeserializeEvent;
@@ -101,7 +102,9 @@ class MapSubscriber implements EventSubscriberInterface
         ) {
             $this->alreadyHashObject = [];
             $this->currentObject = $event->getObject();
-            $this->currentMappings = $this->optimizeMappingSerialize($this->buildMap($event->getObject()));
+            $this->currentMappings = $this->optimizeMappingSerialize(
+                $this->buildMap($event->getObject(), $event->getContext())
+            );
         }
     }
 
@@ -151,14 +154,14 @@ class MapSubscriber implements EventSubscriberInterface
      * Build map
      *
      * @param VersionWorkflowTrait $object
+     * @param Context              $context
      * @param string|null          $prev
      *
      * @return mixed
      * @throws ReflectionException
-     *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
-    protected function buildMap($object, string $prev = null)
+    protected function buildMap($object, Context $context, string $prev = null)
     {
         $splObjectHash = spl_object_hash($object);
         if (isset($this->alreadyHashObject[$splObjectHash])) {
@@ -174,6 +177,7 @@ class MapSubscriber implements EventSubscriberInterface
         $map = [];
         $map[$prev] = $splObjectHash;
 
+        $propertyMetadata = $context->getMetadataFactory()->getMetadataForClass(get_class($object))->propertyMetadata;
         $properties = (new ReflectionClass($object))->getProperties(
             ReflectionProperty::IS_PUBLIC |
             ReflectionProperty::IS_PROTECTED |
@@ -181,13 +185,17 @@ class MapSubscriber implements EventSubscriberInterface
         );
 
         foreach ($properties as $property) {
+            if (!in_array($property->getName(), array_keys($propertyMetadata))) {
+                continue;
+            }
+
             $property->setAccessible(true);
             $propertyValue = $property->getValue($object);
 
             if (is_object($propertyValue) && !$propertyValue instanceof ArrayAccess) {
                 $map = array_merge(
                     $map,
-                    $this->buildMap($propertyValue, sprintf('%s,%s', $prev, $property->getName()))
+                    $this->buildMap($propertyValue, $context, sprintf('%s,%s', $prev, $property->getName()))
                 );
             } elseif ((is_array($propertyValue) || $propertyValue instanceof ArrayAccess)
                 && $property->getName() !== 'versionWorkflowMap'
@@ -195,7 +203,7 @@ class MapSubscriber implements EventSubscriberInterface
                 foreach ($propertyValue as $key => $item) {
                     $map = array_merge(
                         $map,
-                        $this->buildMap($item, sprintf('%s,%s,__array,%s', $prev, $property->getName(), $key))
+                        $this->buildMap($item, $context, sprintf('%s,%s,__array,%s', $prev, $property->getName(), $key))
                     );
                 }
             }

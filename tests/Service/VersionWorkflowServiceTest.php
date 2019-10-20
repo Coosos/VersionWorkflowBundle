@@ -17,25 +17,36 @@ use Generator;
 class VersionWorkflowServiceTest extends AbstractTestCase
 {
     /**
-     * Test apply draft transition
+     * Test version workflow service
+     *
+     * @param int $exampleNumber
      *
      * @dataProvider getExampleProviderList
-     *
-     * @param int $nd
      */
-    public function testApplyDraftTransition(int $nd)
+    public function testVersionWorkflowServiceProcess(int $exampleNumber)
     {
-        $marking = 'draft';
-        $example = $this->getExample($nd);
+        $example = $this->getExample($exampleNumber);
         $news = $example->generate();
-        $news = $this->versionWorkflowService->applyTransition($news);
-
         $newsResult = $example->resultDeserialied();
+
+        $this->nextTestApplyTransition($news, $newsResult);
+    }
+
+    /**
+     * Test apply transition
+     *
+     * @param mixed  $news
+     * @param mixed  $newsResult
+     * @param string $marking
+     */
+    public function nextTestApplyTransition($news, $newsResult, string $marking = 'draft')
+    {
+        $news = $this->versionWorkflowService->applyTransition($news, null, null, $marking);
         $newsResult->setMarking($marking);
 
         $this->assertEquals($newsResult->getMarking(), $news->getMarking());
 
-        $this->nextTestTransformToVersionWorkflowModel([$news, $newsResult]);
+        $this->nextTestTransformToVersionWorkflowModel(compact('news', 'newsResult'));
     }
 
     /**
@@ -45,8 +56,8 @@ class VersionWorkflowServiceTest extends AbstractTestCase
      */
     public function nextTestTransformToVersionWorkflowModel(array $data)
     {
-        $news = $data[0];
-        $newsResult = $data[1];
+        $news = $data['news'];
+        $newsResult = $data['newsResult'];
 
         /** @var VersionWorkflowModel $versionWorkflowModel */
         $versionWorkflowModel = $this->versionWorkflowService->transformToVersionWorkflowModel($news);
@@ -78,6 +89,15 @@ class VersionWorkflowServiceTest extends AbstractTestCase
         $object = $this->versionWorkflowService->transformToObject($versionWorkflowModel);
 
         $this->assertEquals($newsResult, $object);
+
+        switch ($versionWorkflowModel->getMarking()) {
+            case 'draft':
+                $this->nextTestApplyTransition($object, $newsResult, 'validation');
+                break;
+            case 'validation':
+                $this->nextTestApplyTransition($object, $newsResult, 'publish');
+                break;
+        }
     }
 
     /**

@@ -41,26 +41,23 @@ class Example3 extends AbstractExample
      */
     protected function generateObject()
     {
+        $author = $this->generateUser('User10', 'user@example.com');
         $news = $this->generateNews(
             'Hello world',
             'This day is ...',
             new DateTime('2019-10-14T20:54:59+00:00'),
-            null,
+            $author,
             5
         );
 
         $comments = new ArrayCollection();
         for ($i = 0; $i < 5; $i++) {
             $comment = $this->generateComment($news, 'content' . $i, new DateTime('2019-10-14T20:23:59+00:00'));
-            $comments->add($comment);
+            if ($i === 2) {
+                $comment->setUser($this->generateUser('User' . $i, 'user' . $i . '@example.com', $i));
+            }
 
-//            $user = $generateUser->generate();
-//            $comment = $generateComment->generate(false, $news, $user);
-//            $comment->setCreatedAt(new DateTime('2019-10-14T20:23:59+00:00'));
-//            $comments->add($comment);
-//            if ($i === 0) {
-//                $news->setAuthor($user);
-//            }
+            $comments->add($comment);
         }
 
         $news->setComments($comments);
