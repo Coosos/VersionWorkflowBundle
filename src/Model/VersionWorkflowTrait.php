@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Model;
 
+use JMS\Serializer\Annotation as Serializer;
+
 /**
  * Trait VersionWorkflowTrait
  *
@@ -11,16 +13,22 @@ trait VersionWorkflowTrait
 {
     /**
      * @var VersionWorkflowModel|null
+     *
+     * @Serializer\Exclude()
      */
     protected $versionWorkflow;
 
     /**
      * @var string|null
+     *
+     * @Serializer\Type("string")
      */
     protected $workflowName;
 
     /**
      * @var bool
+     *
+     * @Serializer\Exclude()
      */
     protected $versionWorkflowFakeEntity = false;
 

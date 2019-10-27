@@ -6,6 +6,14 @@
 
 If you wish, you can contribute to the project :)
 
+## This bundle required or used
+
+| Package       | Version |
+| ------------- | ------- |
+| PHP           | ^7.2    |
+| Symfony       | ^4.2    |
+| JMS Serialier | ^3.4    |
+
 ## Description
 
 This bundle uses the Symfony Workflow bundle to track transitions in another table. 
@@ -22,4 +30,5 @@ If an old entity yet exists the same identifier, it will be replaced while keepi
 * [Installation](docs/install.md)
 * [Configuration](docs/config.md)
 * [Basic usage](docs/usage.md)
+* [Serializer](https://github.com/schmittjoh/serializer) : I propose directly to you to see the documentation of JMS.
 * [Use with doctrine](docs/doctrine.md)

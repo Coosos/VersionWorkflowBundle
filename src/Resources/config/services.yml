@@ -8,24 +8,6 @@ services:
     resource: '../../'
     exclude: '../../{Entity,Repository}'
 
-  Coosos\VersionWorkflowBundle\Service\SerializerService:
-    public: true
-
-  Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformArrayCollectionListener:
-    tags:
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
-
-  Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformDateTimeListener:
-    tags:
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize }
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_deserialize }
-
-  Coosos\VersionWorkflowBundle\EventListener\Serializer\TransformRelationListener:
-    tags:
-      - { name: kernel.event_listener, event: coosos.version_workflow.pre_serialize,    priority: 1000 }
-      - { name: kernel.event_listener, event: coosos.version_workflow.post_deserialize, priority: 1000 }
-      - { name: kernel.event_listener, event: coosos.version_workflow.post_normalize,   priority: 1000 }
-
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\LoadClassMetadataListener:
     tags:
       - { name: doctrine.event_listener, event: loadClassMetadata }
@@ -35,5 +17,7 @@ services:
       - { name: doctrine.event_listener, event: prePersist, priority: -1000 }
 
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
+    arguments:
+      $serializer: '@jms_serializer.serializer'
     tags:
       - { name: doctrine.event_listener, event: onFlush }

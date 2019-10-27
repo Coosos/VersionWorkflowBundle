@@ -1,1 +1,11 @@
-/vendor/
+# IDE
+.idea/
+
+# Composer
+
+vendor/
+composer.lock
+
+# Test
+build/
+.phpunit.result.cache

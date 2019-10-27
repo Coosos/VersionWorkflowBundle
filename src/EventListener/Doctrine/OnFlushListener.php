@@ -17,6 +17,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
+use JMS\Serializer\SerializerInterface;
 use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
@@ -25,6 +26,9 @@ use Symfony\Component\Workflow\Registry;
  *
  * @package Coosos\VersionWorkflowBundle\EventListener\Doctrine
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class OnFlushListener
 {
@@ -63,6 +67,11 @@ class OnFlushListener
     protected $versionWorkflowService;
 
     /**
+     * @var SerializerInterface
+     */
+    protected $serializer;
+
+    /**
      * OnFlushListener constructor.
      *
      * @param ClassContains                $classContains
@@ -70,13 +79,15 @@ class OnFlushListener
      * @param Registry                     $registry
      * @param VersionWorkflowService       $versionWorkflowService
      * @param EntityManagerInterface       $entityManager
+     * @param SerializerInterface          $serializer
      */
     public function __construct(
         ClassContains $classContains,
         VersionWorkflowConfiguration $versionWorkflowConfiguration,
         Registry $registry,
         VersionWorkflowService $versionWorkflowService,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        SerializerInterface $serializer
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
@@ -84,6 +95,7 @@ class OnFlushListener
         $this->detachDeletionsHash = [];
         $this->listenersInvoker = new ListenersInvoker($entityManager);
         $this->versionWorkflowService = $versionWorkflowService;
+        $this->serializer = $serializer;
     }
 
     /**
@@ -93,6 +105,9 @@ class OnFlushListener
      *
      * @throws ReflectionException
      * @throws ORMException
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function onFlush(OnFlushEventArgs $args)
     {
@@ -117,7 +132,7 @@ class OnFlushListener
 
                         if ($currentPlace) {
                             if (is_array($currentPlace)) {
-                                foreach ($currentPlace as $status => $value) {
+                                foreach (array_keys($currentPlace) as $status) {
                                     if ($this->isAutoMerge($scheduledEntity, $status)) {
                                         $autoMerge = true;
                                         break;
@@ -173,6 +188,8 @@ class OnFlushListener
      * @param VersionWorkflowTrait|mixed $entity
      *
      * @return bool
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function checkDetachDeletionsRecursive(OnFlushEventArgs $args, $entity)
     {
@@ -198,7 +215,7 @@ class OnFlushListener
         }
 
         $meta = $args->getEntityManager()->getClassMetadata(get_class($entity));
-        foreach ($meta->getAssociationMappings() as $fieldName => $associationMapping) {
+        foreach (array_keys($meta->getAssociationMappings()) as $fieldName) {
             if (!$entity->{'get' . ucfirst($fieldName)}() instanceof Collection) {
                 $isDetach = $this->checkDetachDeletionsRecursive($args, $entity->{'get' . ucfirst($fieldName)}());
                 if ($isDetach) {
@@ -216,6 +233,8 @@ class OnFlushListener
      * @param OnFlushEventArgs           $args
      * @param VersionWorkflowTrait|mixed $entity
      * @param string|null                $scheduledType
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function detachRecursive(OnFlushEventArgs $args, $entity, ?string $scheduledType = null)
     {
@@ -228,7 +247,7 @@ class OnFlushListener
         $entityManager->detach($entity);
         $entity->{self::PROPERTY_DETACH} = true;
 
-        foreach ($classMetaData->getAssociationMappings() as $key => $associationMapping) {
+        foreach (array_keys($classMetaData->getAssociationMappings()) as $key) {
             if ($entity->{'get' . ucfirst($key)}() instanceof PersistentCollection) {
                 /** @var PersistentCollection $getCollectionMethod */
                 $getCollectionMethod = $entity->{'get' . ucfirst($key)}();
@@ -320,6 +339,8 @@ class OnFlushListener
      * @param EntityManagerInterface $entityManager
      * @param mixed                  $entity
      * @param bool                   $recompute
+     *
+     * @SuppressWarnings(PHPMD.EmptyCatchBlock)
      */
     protected function invokePreUpdateEvent($entityManager, $entity, $recompute = false)
     {
@@ -351,14 +372,11 @@ class OnFlushListener
      * @param EntityManagerInterface $entityManager
      *
      * @return VersionWorkflowTrait
-     * @throws ReflectionException
      */
     protected function updateSerializedObject($entity, $entityManager)
     {
         if ($entity->getVersionWorkflow()) {
-            $entity->getVersionWorkflow()->setObjectSerialized(
-                $this->versionWorkflowService->cloneAndSerializeObject($entity)
-            );
+            $entity->getVersionWorkflow()->setObjectSerialized($this->serializer->serialize($entity, 'json'));
 
             $this->invokePreUpdateEvent(
                 $entityManager,

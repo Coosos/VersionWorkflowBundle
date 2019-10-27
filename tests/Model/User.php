@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
+use JMS\Serializer\Annotation as Serializer;
+
 /**
  * Class User
  *
@@ -12,16 +14,22 @@ class User
 {
     /**
      * @var int|null
+     *
+     * @Serializer\Type("int")
      */
     private $id;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     private $username;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     private $email;
 

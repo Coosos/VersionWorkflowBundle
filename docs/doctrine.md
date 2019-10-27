@@ -6,5 +6,5 @@ Use `getList` method in repository.
 
     # Example to use marking parameter
     
-     'draft' => margink = 'draft'
+     'draft' => marking = 'draft'
      ['draft', 'validation'] => marking = 'draft' or 'validation'

@@ -3,6 +3,10 @@
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use DateTime;
+use Doctrine\Common\Collections\ArrayCollection;
+use Exception;
+use JMS\Serializer\Annotation as Serializer;
 
 /**
  * Class News
@@ -16,26 +20,36 @@ class News
 
     /**
      * @var int|null
+     *
+     * @Serializer\Type("int")
      */
     private $id;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     private $title;
 
     /**
      * @var string
+     *
+     * @Serializer\Type("string")
      */
     private $content;
 
     /**
      * @var User|null
+     *
+     * @Serializer\Type("Coosos\VersionWorkflowBundle\Tests\Model\User")
      */
     private $author;
 
     /**
      * @var Comment[]|null
+     *
+     * @Serializer\Type("ArrayCollection<Coosos\VersionWorkflowBundle\Tests\Model\Comment>")
      */
     private $comments;
 
@@ -45,18 +59,28 @@ class News
     private $tags;
 
     /**
-     * @var \DateTime
+     * @var DateTime
+     *
+     * @Serializer\Type("DateTime")
      */
     private $createdAt;
 
     /**
+     * @var string
+     *
+     * @Serializer\Type("string")
+     */
+    private $marking;
+
+    /**
      * News constructor.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct()
     {
-        $this->createdAt = new \DateTime();
+        $this->createdAt = new DateTime();
+        $this->comments = new ArrayCollection();
     }
 
     /**
@@ -138,16 +162,16 @@ class News
     /**
      * @return Comment[]|null
      */
-    public function getComments(): ?array
+    public function getComments()
     {
         return $this->comments;
     }
 
     /**
-     * @param Comment[]|null $comments
+     * @param ArrayCollection|null $comments
      * @return News
      */
-    public function setComments(?array $comments): News
+    public function setComments($comments): News
     {
         $this->comments = $comments;
 
@@ -174,7 +198,7 @@ class News
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
     public function getCreatedAt()
     {
@@ -182,12 +206,32 @@ class News
     }
 
     /**
-     * @param \DateTime $createdAt
+     * @param DateTime $createdAt
      * @return News
      */
     public function setCreatedAt($createdAt): News
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMarking()
+    {
+        return $this->marking;
+    }
+
+    /**
+     * @param string $marking
+     *
+     * @return News
+     */
+    public function setMarking($marking): News
+    {
+        $this->marking = $marking;
 
         return $this;
     }
