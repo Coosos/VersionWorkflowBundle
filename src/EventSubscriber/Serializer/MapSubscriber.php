@@ -22,6 +22,8 @@ use ReflectionProperty;
  *
  * @package Coosos\VersionWorkflowBundle\EventSubscriber\Serializer
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class MapSubscriber implements EventSubscriberInterface
 {
@@ -114,12 +116,17 @@ class MapSubscriber implements EventSubscriberInterface
     public function onPostSerialize(ObjectEvent $event)
     {
         if ($event->getObject() === $this->currentObject) {
-            /** @var SerializationVisitorInterface $visitor */
             $visitor = $event->getVisitor();
-            $visitor->visitProperty(
+            $data = [
                 new StaticPropertyMetadata('', self::ATTR_DATA_NAME, $this->currentMappings),
                 $this->currentMappings
-            );
+            ];
+
+            if (!$visitor instanceof SerializationVisitorInterface) {
+                $data[] = $event->getContext();
+            }
+
+            $visitor->visitProperty(...$data);
         }
     }
 
