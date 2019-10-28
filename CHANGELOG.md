@@ -1,3 +1,7 @@
+# 0.1.1
+
+* Change JMS requirements to ^2.4||^3.0
+
 # 0.1.0
 
 * Update PHP required to ``^7.2``

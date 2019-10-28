@@ -8,11 +8,11 @@ If you wish, you can contribute to the project :)
 
 ## This bundle required or used
 
-| Package       | Version |
-| ------------- | ------- |
-| PHP           | ^7.2    |
-| Symfony       | ^4.2    |
-| JMS Serialier | ^3.4    |
+| Package       | Version      |
+| ------------- | ------------ |
+| PHP           | ^7.2         |
+| Symfony       | ^4.2         |
+| JMS Serialier | ^2.4 or ^3.0 |
 
 ## Description
 
