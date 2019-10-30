@@ -5,6 +5,7 @@ namespace Coosos\VersionWorkflowBundle\EventListener\Doctrine;
 use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -17,7 +18,6 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
-use JMS\Serializer\SerializerInterface;
 use ReflectionException;
 use Symfony\Component\Workflow\Registry;
 
@@ -67,7 +67,7 @@ class OnFlushListener
     protected $versionWorkflowService;
 
     /**
-     * @var SerializerInterface
+     * @var SerializerService
      */
     protected $serializer;
 
@@ -79,7 +79,7 @@ class OnFlushListener
      * @param Registry                     $registry
      * @param VersionWorkflowService       $versionWorkflowService
      * @param EntityManagerInterface       $entityManager
-     * @param SerializerInterface          $serializer
+     * @param SerializerService          $serializer
      */
     public function __construct(
         ClassContains $classContains,
@@ -87,7 +87,7 @@ class OnFlushListener
         Registry $registry,
         VersionWorkflowService $versionWorkflowService,
         EntityManagerInterface $entityManager,
-        SerializerInterface $serializer
+        SerializerService $serializer
     ) {
         $this->classContains = $classContains;
         $this->versionWorkflowConfiguration = $versionWorkflowConfiguration;
@@ -376,7 +376,7 @@ class OnFlushListener
     protected function updateSerializedObject($entity, $entityManager)
     {
         if ($entity->getVersionWorkflow()) {
-            $entity->getVersionWorkflow()->setObjectSerialized($this->serializer->serialize($entity, 'json'));
+            $entity->getVersionWorkflow()->setObjectSerialized($this->serializer->serialize($entity));
 
             $this->invokePreUpdateEvent(
                 $entityManager,

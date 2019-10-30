@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\EventSubscriber\Serializer;
 
 use ArrayAccess;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Serializer\Exclusion\FieldsListExclusionStrategy;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Collections\ArrayCollection;
 use JMS\Serializer\Context;
@@ -192,7 +193,8 @@ class MapSubscriber implements EventSubscriberInterface
         );
 
         foreach ($properties as $property) {
-            if (!in_array($property->getName(), array_keys($propertyMetadata))) {
+            if (!in_array($property->getName(), array_keys($propertyMetadata))
+                || in_array($property->getName(), FieldsListExclusionStrategy::IGNORE_FIELDS)) {
                 continue;
             }
 
