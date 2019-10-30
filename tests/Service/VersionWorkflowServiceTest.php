@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\Tests\Service;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Serializer\Exclusion\FieldsListExclusionStrategy;
 use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
 use Generator;
@@ -80,6 +81,9 @@ class VersionWorkflowServiceTest extends AbstractTestCase
         $this->assertEquals($dataSerialized, $versionWorkflowModel->getObjectSerialized());
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $news->getWorkflowName());
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $versionWorkflowModel->getWorkflowName());
+        foreach (FieldsListExclusionStrategy::IGNORE_FIELDS as $field) {
+            $this->assertStringNotContainsString($field, $versionWorkflowModel->getObjectSerialized());
+        }
 
         $this->nextTestTransformVersionWorkflowToOriginalObject(compact('versionWorkflowModel', 'newsResult'));
     }

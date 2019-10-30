@@ -42,9 +42,16 @@ class SerializerTest extends AbstractTestCase
         $this->assertEquals($newsDeserialized, $example->resultDeserialied());
     }
 
-    public function testSerializeExampleWithVersionWorkflowModel()
+    /**
+     * Example
+     *
+     * @dataProvider getExampleProviderList
+     *
+     * @param int $nb
+     */
+    public function testSerializeExampleWithVersionWorkflowModel($nb)
     {
-        $example = $this->getExample(1);
+        $example = $this->getExample($nb);
         $exampleGenerate = $example->generate();
         $exampleGenerate->setVersionWorkflow(new VersionWorkflowModel());
 
