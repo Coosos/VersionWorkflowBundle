@@ -2,6 +2,9 @@
 
 namespace Coosos\VersionWorkflowBundle\Utils;
 
+use ReflectionClass;
+use ReflectionException;
+
 /**
  * Class ClassContains
  *
@@ -41,17 +44,20 @@ class ClassContains
     /**
      * Return true if the given object use the given trait, false if not
      *
-     * @param \ReflectionClass|mixed $class
+     * @param ReflectionClass|mixed $class
      * @param string                 $traitName
      * @param boolean                $isRecursive
      * @return bool
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
     public function hasTrait($class, $traitName, $isRecursive = false)
     {
-        if (!$class instanceof \ReflectionClass) {
-            $entityClass = get_class($class);
-            $class = new \ReflectionClass($entityClass);
+        if (is_object($class) && !$class instanceof ReflectionClass) {
+            $class = get_class($class);
+        }
+
+        if (!$class instanceof ReflectionClass) {
+            $class = new ReflectionClass($class);
         }
 
         if (in_array($traitName, $class->getTraitNames())) {

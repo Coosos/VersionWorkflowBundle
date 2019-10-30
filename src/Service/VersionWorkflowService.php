@@ -6,7 +6,6 @@ use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
-use JMS\Serializer\SerializerInterface;
 use Symfony\Component\Workflow\Registry;
 
 /**
@@ -18,7 +17,7 @@ use Symfony\Component\Workflow\Registry;
 class VersionWorkflowService
 {
     /**
-     * @var SerializerInterface
+     * @var SerializerService
      */
     private $serializer;
 
@@ -35,12 +34,12 @@ class VersionWorkflowService
     /**
      * VersionWorkflowService constructor.
      *
-     * @param SerializerInterface $serializer
-     * @param Registry            $workflows
-     * @param ClassContains       $classContains
+     * @param SerializerService $serializer
+     * @param Registry          $workflows
+     * @param ClassContains     $classContains
      */
     public function __construct(
-        SerializerInterface $serializer,
+        SerializerService $serializer,
         Registry $workflows,
         ClassContains $classContains
     ) {
@@ -105,7 +104,7 @@ class VersionWorkflowService
             $versionWorkflow->setInherit($object->getVersionWorkflow());
         }
 
-        $versionWorkflow->setObjectSerialized($this->serializer->serialize($object, 'json'));
+        $versionWorkflow->setObjectSerialized($this->serializer->serialize($object));
 
         $object->setVersionWorkflow($versionWorkflow);
         $object->setWorkflowName($this->getWorkflowName($object, $workflowName));
@@ -142,8 +141,7 @@ class VersionWorkflowService
     {
         $entity = $this->serializer->deserialize(
             $object->getObjectSerialized(),
-            $object->getModelName(),
-            'json'
+            $object->getModelName()
         );
 
         $entity->setVersionWorkflowFakeEntity(true);

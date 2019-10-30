@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\Tests\Service;
 
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
+use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
 use Generator;
 
@@ -61,12 +62,22 @@ class VersionWorkflowServiceTest extends AbstractTestCase
 
         /** @var VersionWorkflowModel $versionWorkflowModel */
         $versionWorkflowModel = $this->versionWorkflowService->transformToVersionWorkflowModel($news);
-        $dataSerialized = $this->jmsSerializer->serialize($newsResult, 'json');
+        $dataSerialized = $this->jmsSerializer->serialize(
+            $newsResult, SerializerService::SERIALIZE_FORMAT,
+            $this->getSerializerConext()
+        );
 
+        /** @var VersionWorkflowTrait $deserializeData */
+        $deserializeData = $this->jmsSerializer->deserialize(
+            $versionWorkflowModel->getObjectSerialized(),
+            $versionWorkflowModel->getModelName(),
+            SerializerService::SERIALIZE_FORMAT
+        );
+
+        $this->assertEquals(null, $deserializeData->getVersionWorkflow());
         $this->assertEquals($newsResult->getMarking(), $versionWorkflowModel->getMarking());
         $this->assertEquals($news, $versionWorkflowModel->getOriginalObject());
         $this->assertEquals($dataSerialized, $versionWorkflowModel->getObjectSerialized());
-
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $news->getWorkflowName());
         $this->assertEquals(self::DEFAULT_WORKFLOW_NAME, $versionWorkflowModel->getWorkflowName());
 

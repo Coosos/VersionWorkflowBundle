@@ -3,10 +3,13 @@
 namespace Coosos\VersionWorkflowBundle\Tests;
 
 use Coosos\VersionWorkflowBundle\EventSubscriber\Serializer\MapSubscriber;
+use Coosos\VersionWorkflowBundle\Serializer\Exclusion\FieldsListExclusionStrategy;
+use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use JMS\Serializer\EventDispatcher\EventDispatcher;
+use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerBuilder;
 use JMS\Serializer\SerializerInterface as JmsSerializerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -37,21 +40,31 @@ abstract class AbstractTestCase extends TestCase
     protected $versionWorkflowService;
 
     /**
+     * @var SerializationContext
+     */
+    protected $serializerContext;
+
+    /**
      * Set up
      */
     protected function setUp(): void
     {
+        $classContains = new ClassContains();
         $builder = SerializerBuilder::create();
         $builder->configureListeners(function (EventDispatcher $dispatcher) {
             $dispatcher->addSubscriber(new MapSubscriber(new ClassContains()));
         });
 
+
         $this->jmsSerializer = $builder->build();
+        if (!$this->serializerContext) {
+            $this->serializerContext = (SerializationContext::create())
+                ->addExclusionStrategy(new FieldsListExclusionStrategy($classContains));
+        }
 
         $registry = $this->getRegistryMock();
-        $classContains = new ClassContains();
         $this->versionWorkflowService = new VersionWorkflowService(
-            $this->jmsSerializer,
+            new SerializerService($this->jmsSerializer, $classContains),
             $registry,
             $classContains
         );
@@ -90,5 +103,11 @@ abstract class AbstractTestCase extends TestCase
         $registryMock->method('get')->willReturnReference($workflowMock);
 
         return $registryMock;
+    }
+
+    protected function getSerializerConext()
+    {
+        return (SerializationContext::create())
+            ->addExclusionStrategy(new FieldsListExclusionStrategy(new ClassContains()));
     }
 }

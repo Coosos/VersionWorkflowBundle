@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Serializer;
 
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowModel;
+use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Tests\AbstractTestCase;
 use Coosos\VersionWorkflowBundle\Tests\Model\News;
 use Generator;
@@ -25,8 +27,38 @@ class SerializerTest extends AbstractTestCase
     {
         $example = $this->getExample($nb);
         $build = $this->jmsSerializer;
-        $newsSerialized = $build->serialize($example->generate(), 'json');
-        $newsDeserialized = $build->deserialize($newsSerialized, News::class, 'json');
+        $newsSerialized = $build->serialize(
+            $example->generate(),
+            SerializerService::SERIALIZE_FORMAT,
+            $this->getSerializerConext()
+        );
+
+        $newsDeserialized = $build->deserialize(
+            $newsSerialized,
+            News::class,
+            SerializerService::SERIALIZE_FORMAT
+        );
+
+        $this->assertEquals($newsDeserialized, $example->resultDeserialied());
+    }
+
+    public function testSerializeExampleWithVersionWorkflowModel()
+    {
+        $example = $this->getExample(1);
+        $exampleGenerate = $example->generate();
+        $exampleGenerate->setVersionWorkflow(new VersionWorkflowModel());
+
+        $newsSerialized = $this->jmsSerializer->serialize(
+            $exampleGenerate,
+            SerializerService::SERIALIZE_FORMAT,
+            $this->getSerializerConext()
+        );
+
+        $newsDeserialized = $this->jmsSerializer->deserialize(
+            $newsSerialized,
+            News::class,
+            SerializerService::SERIALIZE_FORMAT
+        );
 
         $this->assertEquals($newsDeserialized, $example->resultDeserialied());
     }

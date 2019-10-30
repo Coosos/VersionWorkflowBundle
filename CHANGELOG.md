@@ -1,3 +1,7 @@
+# 0.1.2
+
+* Add Exclusion Strategy for exclude fields from VersionWorkflowTrait
+
 # 0.1.1
 
 * Change JMS requirements to ^2.4||^3.0
