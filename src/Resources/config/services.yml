@@ -17,7 +17,5 @@ services:
       - { name: doctrine.event_listener, event: prePersist, priority: -1000 }
 
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
-    arguments:
-      $serializer: '@jms_serializer.serializer'
     tags:
       - { name: doctrine.event_listener, event: onFlush }

@@ -1,3 +1,8 @@
+# 0.1.3
+
+* Fix dependency injection for ``Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener``
+* Add exclusion strategy to deserializer context
+
 # 0.1.2
 
 * Add Exclusion Strategy for exclude fields from VersionWorkflowTrait

@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\Service;
 
 use Coosos\VersionWorkflowBundle\Serializer\Exclusion\FieldsListExclusionStrategy;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 
@@ -66,6 +67,9 @@ class SerializerService
      */
     public function deserialize($data, $type, $format = self::SERIALIZE_FORMAT)
     {
-        return $this->serializer->deserialize($data, $type, $format);
+        $context = (DeserializationContext::create())
+            ->addExclusionStrategy(new FieldsListExclusionStrategy($this->classContains));
+
+        return $this->serializer->deserialize($data, $type, $format, $context);
     }
 }
