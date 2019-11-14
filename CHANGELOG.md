@@ -1,3 +1,8 @@
+# 0.1.4
+
+* Update test
+  * Add deserializer context
+
 # 0.1.3
 
 * Fix dependency injection for ``Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener``

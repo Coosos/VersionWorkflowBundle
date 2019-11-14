@@ -30,13 +30,14 @@ class SerializerTest extends AbstractTestCase
         $newsSerialized = $build->serialize(
             $example->generate(),
             SerializerService::SERIALIZE_FORMAT,
-            $this->getSerializerConext()
+            $this->getSerializerContext()
         );
 
         $newsDeserialized = $build->deserialize(
             $newsSerialized,
             News::class,
-            SerializerService::SERIALIZE_FORMAT
+            SerializerService::SERIALIZE_FORMAT,
+            $this->getDeserializerContext()
         );
 
         $this->assertEquals($newsDeserialized, $example->resultDeserialied());
@@ -58,13 +59,14 @@ class SerializerTest extends AbstractTestCase
         $newsSerialized = $this->jmsSerializer->serialize(
             $exampleGenerate,
             SerializerService::SERIALIZE_FORMAT,
-            $this->getSerializerConext()
+            $this->getSerializerContext()
         );
 
         $newsDeserialized = $this->jmsSerializer->deserialize(
             $newsSerialized,
             News::class,
-            SerializerService::SERIALIZE_FORMAT
+            SerializerService::SERIALIZE_FORMAT,
+            $this->getDeserializerContext()
         );
 
         $this->assertEquals($newsDeserialized, $example->resultDeserialied());
