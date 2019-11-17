@@ -10,9 +10,15 @@ use Doctrine\Common\Annotations\Reader;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata as ORMClassMetadata;
 use ReflectionProperty;
 
+/**
+ * Class LinkEntityDoctrine
+ *
+ * @package Coosos\VersionWorkflowBundle\LinkEntity
+ * @author  Remy Lescallier <lescallier1@gmail.com>
+ */
 class LinkEntityDoctrine
 {
     /**
@@ -89,10 +95,10 @@ class LinkEntityDoctrine
     }
 
     /**
-     * @param \Doctrine\ORM\Mapping\ClassMetadata $classMetadata
-     * @param array                               $identifiers
-     * @param mixed                               $originalEntity
-     * @param mixed                               $model
+     * @param ORMClassMetadata $classMetadata
+     * @param array            $identifiers
+     * @param mixed            $originalEntity
+     * @param mixed            $model
      */
     protected function updateSimpleMapping($classMetadata, $identifiers, $originalEntity, $model)
     {
@@ -116,9 +122,9 @@ class LinkEntityDoctrine
     }
 
     /**
-     * @param ClassMetadata|ClassMetadataInfo $classMetadata
-     * @param mixed                           $originalEntity
-     * @param mixed                           $model
+     * @param ClassMetadata|ORMClassMetadata $classMetadata
+     * @param mixed                          $originalEntity
+     * @param mixed                          $model
      */
     protected function updateRelationMapping($classMetadata, $originalEntity, $model)
     {
@@ -156,7 +162,7 @@ class LinkEntityDoctrine
     /**
      * @param $originalEntity
      * @param $model
-     * @param ClassMetadata|ClassMetadataInfo $classMetadata
+     * @param ClassMetadata|ORMClassMetadata $classMetadata
      * @param $metadataField
      * @param $associationMapping
      *
@@ -173,8 +179,8 @@ class LinkEntityDoctrine
         $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
         $annotationsResults = $this->getAnnotationResults($classMetadata->getReflectionProperty($metadataField));
 
-        if (($associationMapping['type'] === ClassMetadataInfo::MANY_TO_ONE
-                || $associationMapping['type'] === ClassMetadataInfo::ONE_TO_ONE)
+        if (($associationMapping['type'] === ORMClassMetadata::MANY_TO_ONE
+                || $associationMapping['type'] === ORMClassMetadata::ONE_TO_ONE)
             && $setterMethod
         ) {
             $originalEntity->{$setterMethod}(
@@ -194,7 +200,7 @@ class LinkEntityDoctrine
      * @param mixed                               $originalEntity
      * @param mixed                               $model
      * @param string                              $metadataField
-     * @param ClassMetadata|ClassMetadataInfo $classMetadata
+     * @param ClassMetadata|ORMClassMetadata $classMetadata
      *
      * @return bool
      */
@@ -216,7 +222,8 @@ class LinkEntityDoctrine
             $metadataField
         );
 
-        $this->parseAddElementFromList($originalEntity, $compare, $metadataField);
+        $this->parseAddElementFromList($compare, $metadataField, $originalEntity);
+        $this->parseKeyChangedFromList($compare, $metadataField, $originalEntity);
 
         return true;
     }
@@ -225,7 +232,7 @@ class LinkEntityDoctrine
      * @param $originalEntity
      * @param $model
      * @param $compare
-     * @param ClassMetadata|ClassMetadataInfo $classMetadata
+     * @param ClassMetadata|ORMClassMetadata $classMetadata
      * @param $field
      */
     protected function parseUpdateElementFromList(
@@ -261,11 +268,13 @@ class LinkEntityDoctrine
     }
 
     /**
-     * @param mixed                  $originalEntity
-     * @param array                  $compare
-     * @param string                 $field
+     * Parse add element from list
+     *
+     * @param array        $compare
+     * @param string       $field
+     * @param mixed|object $originalEntity
      */
-    protected function parseAddElementFromList($originalEntity, $compare, $field)
+    protected function parseAddElementFromList(array $compare, string $field, $originalEntity)
     {
         if (!empty($compare['added'])) {
             $getterMethod = $this->classContains->getGetterMethod($originalEntity, $field);
@@ -323,9 +332,31 @@ class LinkEntityDoctrine
     }
 
     /**
-     * @param mixed                               $originalEntity
-     * @param mixed                               $model
-     * @param string                              $metadataField
+     * Parse key changed from list
+     *
+     * @param array        $compare
+     * @param string       $field
+     * @param mixed|object $entity
+     *
+     * @return Collection|array
+     */
+    protected function parseKeyChangedFromList(array $compare, string $field, $entity)
+    {
+        $getterMethod = $this->classContains->getGetterMethod($entity, $field);
+        $originalEntityList = $entity->{$getterMethod}();
+        if (!empty($compare['keyChanged'])) {
+            foreach (array_keys($compare['keyChanged']) as $key) {
+                unset($originalEntityList[$key]);
+            }
+        }
+
+        return $originalEntityList;
+    }
+
+    /**
+     * @param mixed         $originalEntity
+     * @param mixed         $model
+     * @param string        $metadataField
      * @param ClassMetadata $classMetadata
      *
      * @return array
@@ -333,6 +364,7 @@ class LinkEntityDoctrine
     protected function compareRelationList($originalEntity, $model, $metadataField, $classMetadata)
     {
         $results = [
+            'keyChanged' => [],
             'added' => [],
             'updated' => [],
             'removed' => [],
@@ -342,11 +374,14 @@ class LinkEntityDoctrine
 
         foreach ($model->{$getterMethod}() as $modelKey => $subModel) {
             $exist = false;
-            foreach ($originalEntity->{$getterMethod}() as $subOriginalModel) {
-                if ($this->compareIdentifierModel($classMetadata, $subModel, $subOriginalModel)) {
+            foreach ($originalEntity->{$getterMethod}() as $originalKey => $subOriginalModel) {
+                if ($this->compareIdentifierModel($classMetadata, $subModel, $subOriginalModel, true)) {
                     $exist = true;
 
                     $results['updated'][$modelKey] = $this->getIdentifiers($classMetadata, $subModel);
+                    if ($modelKey !== $originalKey) {
+                        $results['keyChanged'][$originalKey] = $modelKey;
+                    }
 
                     break;
                 }
@@ -358,6 +393,10 @@ class LinkEntityDoctrine
         }
 
         foreach ($originalEntity->{$getterMethod}() as $subOriginalModel) {
+            if (!$this->checkIdentifierIsNotNull($this->getIdentifiers($classMetadata, $subOriginalModel))) {
+                continue;
+            }
+
             $exist = false;
             foreach ($results['updated'] as $result) {
                 if ($result == $this->getIdentifiers($classMetadata, $subOriginalModel)) {
@@ -376,18 +415,29 @@ class LinkEntityDoctrine
     }
 
     /**
-     * @param $classMetadata
-     * @param $firstObject
-     * @param $secondObject
+     * Compare identifier model
+     *
+     * @param ClassMetadata $classMetadata
+     * @param mixed|object  $firstObject
+     * @param mixed|object  $secondObject
+     * @param bool          $checkIsNotNull
      *
      * @return bool
      */
-    protected function compareIdentifierModel($classMetadata, $firstObject, $secondObject)
-    {
+    protected function compareIdentifierModel(
+        ClassMetadata $classMetadata,
+        $firstObject,
+        $secondObject,
+        bool $checkIsNotNull = false
+    ) {
         $firstObjectIdentifier = $this->getIdentifiers($classMetadata, $firstObject);
         $secondObjectIdentifier = $this->getIdentifiers($classMetadata, $secondObject);
 
-        return $firstObjectIdentifier == $secondObjectIdentifier;
+        if (!$checkIsNotNull) {
+            return $firstObjectIdentifier == $secondObjectIdentifier;
+        }
+
+        return $this->checkIdentifierIsNotNull($firstObjectIdentifier) && $firstObjectIdentifier == $secondObjectIdentifier;
     }
 
     /**
@@ -430,5 +480,24 @@ class LinkEntityDoctrine
     protected function getOriginalEntity(string $className, array $identifiers)
     {
         return $this->entityManager->getRepository($className)->findOneBy($identifiers);
+    }
+
+    /**
+     * Check if identifier list from pbject is not all null
+     *
+     * @param array $identifiers
+     *
+     * @return bool
+     */
+    protected function checkIdentifierIsNotNull(array $identifiers): bool
+    {
+        $countNull = 0;
+        foreach ($identifiers as $value) {
+            if (is_null($value)) {
+                $countNull++;
+            }
+        }
+
+        return count($identifiers) !== $countNull;
     }
 }

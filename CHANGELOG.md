@@ -4,6 +4,7 @@
   * Add deserializer context
 * Fix map subscriber error if field not exist in map array
 * Moving the entity link procedure
+* Fix if key is changed in collection relation
 
 # 0.1.3
 
