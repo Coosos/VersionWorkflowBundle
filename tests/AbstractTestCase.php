@@ -8,6 +8,7 @@ use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
 use Coosos\VersionWorkflowBundle\Tests\Example\AbstractExample;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
+use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\EventDispatcher\EventDispatcher;
 use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerBuilder;
@@ -105,9 +106,21 @@ abstract class AbstractTestCase extends TestCase
         return $registryMock;
     }
 
-    protected function getSerializerConext()
+    /**
+     * @return SerializationContext
+     */
+    protected function getSerializerContext()
     {
         return (SerializationContext::create())
+            ->addExclusionStrategy(new FieldsListExclusionStrategy(new ClassContains()));
+    }
+
+    /**
+     * @return DeserializationContext
+     */
+    protected function getDeserializerContext()
+    {
+        return (DeserializationContext::create())
             ->addExclusionStrategy(new FieldsListExclusionStrategy(new ClassContains()));
     }
 }

@@ -65,14 +65,15 @@ class VersionWorkflowServiceTest extends AbstractTestCase
         $versionWorkflowModel = $this->versionWorkflowService->transformToVersionWorkflowModel($news);
         $dataSerialized = $this->jmsSerializer->serialize(
             $newsResult, SerializerService::SERIALIZE_FORMAT,
-            $this->getSerializerConext()
+            $this->getSerializerContext()
         );
 
         /** @var VersionWorkflowTrait $deserializeData */
         $deserializeData = $this->jmsSerializer->deserialize(
             $versionWorkflowModel->getObjectSerialized(),
             $versionWorkflowModel->getModelName(),
-            SerializerService::SERIALIZE_FORMAT
+            SerializerService::SERIALIZE_FORMAT,
+            $this->getDeserializerContext()
         );
 
         $this->assertEquals(null, $deserializeData->getVersionWorkflow());
