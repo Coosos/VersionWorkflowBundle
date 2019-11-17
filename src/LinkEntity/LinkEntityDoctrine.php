@@ -18,6 +18,8 @@ use ReflectionProperty;
  *
  * @package Coosos\VersionWorkflowBundle\LinkEntity
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class LinkEntityDoctrine
 {
@@ -47,8 +49,11 @@ class LinkEntityDoctrine
      * @param EntityManagerInterface $entityManager
      * @param ClassContains          $classContains
      */
-    public function __construct(Reader $annotationReader, EntityManagerInterface $entityManager, ClassContains $classContains)
-    {
+    public function __construct(
+        Reader $annotationReader,
+        EntityManagerInterface $entityManager,
+        ClassContains $classContains
+    ) {
         $this->annotationReader = $annotationReader;
         $this->entityManager = $entityManager;
         $this->originalObjectByModelHash = [];
@@ -360,6 +365,7 @@ class LinkEntityDoctrine
      * @param ClassMetadata $classMetadata
      *
      * @return array
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function compareRelationList($originalEntity, $model, $metadataField, $classMetadata)
     {
@@ -437,7 +443,8 @@ class LinkEntityDoctrine
             return $firstObjectIdentifier == $secondObjectIdentifier;
         }
 
-        return $this->checkIdentifierIsNotNull($firstObjectIdentifier) && $firstObjectIdentifier == $secondObjectIdentifier;
+        return $this->checkIdentifierIsNotNull($firstObjectIdentifier)
+            && $firstObjectIdentifier == $secondObjectIdentifier;
     }
 
     /**
