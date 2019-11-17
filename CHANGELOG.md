@@ -3,6 +3,7 @@
 * Update test
   * Add deserializer context
 * Fix map subscriber error if field not exist in map array
+* Moving the entity link procedure
 
 # 0.1.3
 
