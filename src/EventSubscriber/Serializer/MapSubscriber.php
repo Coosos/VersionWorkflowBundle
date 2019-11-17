@@ -263,6 +263,10 @@ class MapSubscriber implements EventSubscriberInterface
         string $currentMap = 'root',
         array &$already = []
     ) {
+        if (!isset($map[$currentMap])) {
+            return $object;
+        }
+
         if (isset($already[$map[$currentMap]])) {
             return $already[$map[$currentMap]];
         }

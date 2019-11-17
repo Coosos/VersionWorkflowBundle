@@ -2,6 +2,7 @@
 
 * Update test
   * Add deserializer context
+* Fix map subscriber error if field not exist in map array
 
 # 0.1.3
 
