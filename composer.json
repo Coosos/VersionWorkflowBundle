@@ -12,7 +12,8 @@
     "symfony/http-kernel": "^4.2",
     "symfony/property-info": "^4.2",
     "doctrine/orm": "^2.6",
-    "jms/serializer-bundle": "^2.4||^3.0"
+    "jms/serializer-bundle": "^2.4||^3.0",
+    "coosos/jms-serializer-bidirectional-relation": "^1.0.0"
   },
   "require-dev": {
     "edgedesign/phpqa": "^1.23",

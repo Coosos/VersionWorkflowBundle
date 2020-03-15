@@ -1,3 +1,11 @@
+# 0.1.5
+
+* Move mapping serializer to own package (``coosos/jms-serializer-bidirectional-relation``)
+  * Fix array keys who an auto reset
+* Fix array link entity to original
+* DetachEntity (based on doctrine 2.7) class for recursive detach directly in properties of UnitOfWork
+* Reorganize / Optimize code
+
 # 0.1.4
 
 * Update test

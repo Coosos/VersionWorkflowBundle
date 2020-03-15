@@ -19,3 +19,11 @@ services:
   Coosos\VersionWorkflowBundle\EventListener\Doctrine\OnFlushListener:
     tags:
       - { name: doctrine.event_listener, event: onFlush }
+
+  Coosos\BidirectionalRelation\EventSubscriber\MapDeserializerSubscriber:
+    tags:
+      - { name: jms_serializer.event_subscriber }
+
+  Coosos\BidirectionalRelation\EventSubscriber\MapSerializerSubscriber:
+    tags:
+      - { name: jms_serializer.event_subscriber }

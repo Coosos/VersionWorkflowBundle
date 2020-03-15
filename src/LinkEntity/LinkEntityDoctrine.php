@@ -4,6 +4,7 @@ namespace Coosos\VersionWorkflowBundle\LinkEntity;
 
 use Coosos\VersionWorkflowBundle\Annotation\IgnoreChange;
 use Coosos\VersionWorkflowBundle\Annotation\OnlyId;
+use Coosos\VersionWorkflowBundle\Entity\VersionWorkflow;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use Coosos\VersionWorkflowBundle\Utils\ClassContains;
 use Doctrine\Common\Annotations\Reader;
@@ -11,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\Mapping\ClassMetadata;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata as ORMClassMetadata;
+use Doctrine\ORM\PersistentCollection;
 use ReflectionProperty;
 
 /**
@@ -74,7 +76,7 @@ class LinkEntityDoctrine
         array $annotations = [],
         ClassMetadata $classMetadata = null
     ) {
-        if (is_null($model)) {
+        if (is_null($model) || $model instanceof VersionWorkflow) {
             return $model;
         } elseif (in_array(spl_object_hash($model), array_keys($this->originalObjectByModelHash))) {
             return $this->originalObjectByModelHash[spl_object_hash($model)];
@@ -215,6 +217,12 @@ class LinkEntityDoctrine
         $metadataField,
         $classMetadata
     ) {
+        $getterMethod = $this->classContains->getGetterMethod($originalEntity, $metadataField);
+        $setterMethod = $this->classContains->getSetterMethod($originalEntity, $metadataField);
+        if (spl_object_hash($originalEntity->{$getterMethod}()) === spl_object_hash($model->{$getterMethod}())) {
+            $originalEntity->{$setterMethod}(clone $originalEntity->{$getterMethod}());
+        }
+
         $compare = $this->compareRelationList($originalEntity, $model, $metadataField, $classMetadata);
 
         $this->parseRemoveElementFromList($originalEntity, $compare, $classMetadata, $metadataField);
@@ -227,8 +235,8 @@ class LinkEntityDoctrine
             $metadataField
         );
 
-        $this->parseAddElementFromList($compare, $metadataField, $originalEntity);
         $this->parseKeyChangedFromList($compare, $metadataField, $originalEntity);
+        $this->parseAddElementFromList($compare, $metadataField, $originalEntity);
 
         return true;
     }
@@ -255,8 +263,8 @@ class LinkEntityDoctrine
             $modelEntityList = $model->{$getterMethod}();
             $originalEntityList = $originalEntity->{$getterMethod}();
 
-            foreach ($modelEntityList as $key => $item) {
-                foreach ($originalEntityList as $itemOriginal) {
+            foreach ($modelEntityList as $item) {
+                foreach ($originalEntityList as $key => $itemOriginal) {
                     if ($this->compareIdentifierModel($classMetadata, $item, $itemOriginal)) {
                         $originalEntityList[$key] = $this->linkFakeEntityWithOriginalEntity(
                             $item,
@@ -349,9 +357,14 @@ class LinkEntityDoctrine
     {
         $getterMethod = $this->classContains->getGetterMethod($entity, $field);
         $originalEntityList = $entity->{$getterMethod}();
+        if ($originalEntityList instanceof PersistentCollection) {
+            $originalEntityList = $originalEntityList->unwrap();
+        }
+
         if (!empty($compare['keyChanged'])) {
-            foreach (array_keys($compare['keyChanged']) as $key) {
-                unset($originalEntityList[$key]);
+            foreach ($compare['keyChanged'] as $sourceKey => $destinationKey) {
+                $originalEntityList[$destinationKey] = $originalEntityList[$sourceKey];
+                unset($originalEntityList[$sourceKey]);
             }
         }
 
