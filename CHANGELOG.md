@@ -2,6 +2,8 @@
 
 * Move mapping serializer to own package (``coosos/jms-serializer-bidirectional-relation``)
   * Fix array keys who an auto reset
+  * Necessary to add the annotation ``Coosos\BidirectionalRelation\Annotations\SerializerBidirectionalRelation`` 
+    to your root entity which will be serialized
 * Fix array link entity to original
 * DetachEntity (based on doctrine 2.7) class for recursive detach directly in properties of UnitOfWork
 * Reorganize / Optimize code
