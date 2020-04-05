@@ -2,6 +2,8 @@
 
 namespace Coosos\VersionWorkflowBundle\Model;
 
+use Coosos\BidirectionalRelation\Annotations\ExcludeFromMapping;
+
 /**
  * Trait VersionWorkflowTrait
  *
@@ -11,16 +13,22 @@ trait VersionWorkflowTrait
 {
     /**
      * @var VersionWorkflowModel|null
+     *
+     * @ExcludeFromMapping()
      */
     protected $versionWorkflow;
 
     /**
      * @var string|null
+     *
+     * @ExcludeFromMapping()
      */
     protected $workflowName;
 
     /**
      * @var bool
+     *
+     * @ExcludeFromMapping()
      */
     protected $versionWorkflowFakeEntity = false;
 

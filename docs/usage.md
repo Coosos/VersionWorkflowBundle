@@ -1,9 +1,14 @@
 # Usage
 
-# Prepare your model
+This bundle use ``coosos/jms-serializer-bidirectional-relation`` package, see the documentation for more configuration.
+
+## Prepare your model
 
 For your model to work with bundle, is necessary to use VersionWorkflowTrait.
 
+    /**
+     * @Coosos\BidirectionalRelation\Annotations\SerializerBidirectionalRelation()
+     */
     class News
     {
         use \Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
