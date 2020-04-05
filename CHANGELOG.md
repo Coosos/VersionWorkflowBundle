@@ -1,4 +1,4 @@
-# 0.1.5
+# 0.2.0
 
 * Move mapping serializer to own package (``coosos/jms-serializer-bidirectional-relation``)
   * Fix array keys who an auto reset
