@@ -2,7 +2,9 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests;
 
-use Coosos\VersionWorkflowBundle\EventSubscriber\Serializer\MapSubscriber;
+use Coosos\BidirectionalRelation\EventSubscriber\MapDeserializerSubscriber;
+use Coosos\BidirectionalRelation\EventSubscriber\MapSerializerSubscriber;
+use Coosos\VersionWorkflowBundle\Model\VersionWorkflowConfiguration;
 use Coosos\VersionWorkflowBundle\Serializer\Exclusion\FieldsListExclusionStrategy;
 use Coosos\VersionWorkflowBundle\Service\SerializerService;
 use Coosos\VersionWorkflowBundle\Service\VersionWorkflowService;
@@ -46,6 +48,11 @@ abstract class AbstractTestCase extends TestCase
     protected $serializerContext;
 
     /**
+     * @var Registry
+     */
+    protected $registryWorkflow;
+
+    /**
      * Set up
      */
     protected function setUp(): void
@@ -53,9 +60,9 @@ abstract class AbstractTestCase extends TestCase
         $classContains = new ClassContains();
         $builder = SerializerBuilder::create();
         $builder->configureListeners(function (EventDispatcher $dispatcher) {
-            $dispatcher->addSubscriber(new MapSubscriber(new ClassContains()));
+            $dispatcher->addSubscriber(new MapSerializerSubscriber());
+            $dispatcher->addSubscriber(new MapDeserializerSubscriber());
         });
-
 
         $this->jmsSerializer = $builder->build();
         if (!$this->serializerContext) {
@@ -63,10 +70,10 @@ abstract class AbstractTestCase extends TestCase
                 ->addExclusionStrategy(new FieldsListExclusionStrategy($classContains));
         }
 
-        $registry = $this->getRegistryMock();
+        $this->registryWorkflow = $this->getRegistryMock();
         $this->versionWorkflowService = new VersionWorkflowService(
             new SerializerService($this->jmsSerializer, $classContains),
-            $registry,
+            $this->registryWorkflow,
             $classContains
         );
     }
@@ -122,5 +129,23 @@ abstract class AbstractTestCase extends TestCase
     {
         return (DeserializationContext::create())
             ->addExclusionStrategy(new FieldsListExclusionStrategy(new ClassContains()));
+    }
+
+    /**
+     * Get version workflow configuration model
+     *
+     * @return VersionWorkflowConfiguration
+     */
+    protected function getVersionWorkflowConfiguration()
+    {
+        $config = [
+            'workflows' => [
+                self::DEFAULT_WORKFLOW_NAME => [
+                    'auto_merge' => ['publish'],
+                ],
+            ],
+        ];
+
+        return new VersionWorkflowConfiguration($config);
     }
 }

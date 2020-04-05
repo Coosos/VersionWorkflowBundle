@@ -16,10 +16,11 @@ class VersionWorkflowRepository extends EntityRepository
     /**
      * Get list
      *
-     * @param string $classPath
-     * @param string $workflowName
-     * @param string $marking
-     * @param bool   $lastOfInstance
+     * @param string       $classPath
+     * @param string       $workflowName
+     * @param string|array $marking
+     * @param bool         $lastOfInstance
+     *
      * @return mixed
      */
     public function getList(string $classPath, string $workflowName, $marking, $lastOfInstance = true)

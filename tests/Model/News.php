@@ -2,6 +2,7 @@
 
 namespace Coosos\VersionWorkflowBundle\Tests\Model;
 
+use Coosos\BidirectionalRelation\Annotations\SerializerBidirectionalRelation;
 use Coosos\VersionWorkflowBundle\Model\VersionWorkflowTrait;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -13,6 +14,8 @@ use JMS\Serializer\Annotation as Serializer;
  *
  * @package Coosos\VersionWorkflowBundle\Tests\Model
  * @author  Remy Lescallier <lescallier1@gmail.com>
+ *
+ * @SerializerBidirectionalRelation()
  */
 class News
 {

@@ -30,5 +30,10 @@ If an old entity yet exists the same identifier, it will be replaced while keepi
 * [Installation](docs/install.md)
 * [Configuration](docs/config.md)
 * [Basic usage](docs/usage.md)
-* [Serializer](https://github.com/schmittjoh/serializer) : I propose directly to you to see the documentation of JMS.
+* [Serializer](https://github.com/schmittjoh/serializer)
 * [Use with doctrine](docs/doctrine.md)
+
+## TODO
+
+* Replace SingleStateMarkingStore by MethodMarkingStore
+* Replace setInitialPlace by setInitialPlaces
