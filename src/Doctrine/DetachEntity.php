@@ -86,88 +86,23 @@ class DetachEntity
         }
 
         $visited[$oid] = $entity; // mark visited
-        switch ($unitOfWork->getEntityState($entity, UnitOfWork::STATE_DETACHED)) {
-            case UnitOfWork::STATE_MANAGED:
-                if ($unitOfWork->isInIdentityMap($entity)) {
-                    $unitOfWork->removeFromIdentityMap($entity);
-                }
+        if ($unitOfWork->getEntityState($entity, UnitOfWork::STATE_DETACHED) === UnitOfWork::STATE_MANAGED) {
+            if ($unitOfWork->isInIdentityMap($entity)) {
+                $unitOfWork->removeFromIdentityMap($entity);
+            }
 
-                if (!$entity instanceof VersionWorkflow &&
-                    isset($invokes['preUpdate']) &&
-                    is_callable($invokes['preUpdate'])
-                ) {
-                    $invokes['preUpdate']($entity);
-                }
-
-                $entitiesDetached[$oid] = true;
-                $this->unsetFromUnitOfWork($unitOfWork, 'entityInsertions', $oid);
-                $this->unsetFromUnitOfWork($unitOfWork, 'entityUpdates', $oid);
-                $this->unsetFromUnitOfWork($unitOfWork, 'entityDeletions', $oid);
-                $this->unsetFromUnitOfWork($unitOfWork, 'entityIdentifiers', $oid);
-                $this->unsetFromUnitOfWork($unitOfWork, 'entityStates', $oid);
-                $this->unsetFromUnitOfWork($unitOfWork, 'originalEntityData', $oid);
-
-                break;
-            case UnitOfWork::STATE_NEW:
-            case UnitOfWork::STATE_DETACHED:
-                return;
+            if (!$entity instanceof VersionWorkflow &&
+                isset($invokes['preUpdate']) &&
+                is_callable($invokes['preUpdate'])
+            ) {
+                $invokes['preUpdate']($entity);
+            }
         }
+
+        $this->unsetEntity($entity, $unitOfWork, $entitiesDetached);
 
         if (!$noCascade) {
             $this->cascadeDetach($entity, $unitOfWork, $visited, $entitiesDetached, $invokes);
-        }
-    }
-
-    /**
-     * Cascades a detach operation to associated entities.
-     *
-     * @param object     $entity
-     * @param UnitOfWork $unitOfWork
-     * @param array      $visited
-     * @param array      $entitiesDetached
-     * @param array      $invokes
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    private function cascadeDetach(
-        $entity,
-        UnitOfWork
-        $unitOfWork,
-        array &$visited,
-        array &$entitiesDetached,
-        array $invokes
-    ) {
-        $class = $this->em->getClassMetadata(get_class($entity));
-
-        foreach ($class->associationMappings as $assoc) {
-            $relatedEntities = $class->reflFields[$assoc['fieldName']]->getValue($entity);
-            if ($relatedEntities instanceof PersistentCollection ||
-                $relatedEntities instanceof Collection ||
-                $relatedEntities instanceof ArrayCollection
-            ) {
-                $this->unsetFromUnitOfWork($unitOfWork, 'collectionUpdates', spl_object_hash($relatedEntities));
-                $this->unsetFromUnitOfWork($unitOfWork, 'visitedCollections', spl_object_hash($relatedEntities));
-            }
-
-            if ($relatedEntities instanceof PersistentCollection) {
-                $relatedEntities = $relatedEntities->unwrap();
-            }
-
-            switch (true) {
-                case ($relatedEntities instanceof Collection):
-                case (is_array($relatedEntities)):
-                    foreach ($relatedEntities as $relatedEntity) {
-                        $this->doDetach($relatedEntity, $unitOfWork, $visited, $entitiesDetached, $invokes);
-                    }
-                    break;
-                case ($relatedEntities !== null):
-                    $this->doDetach($relatedEntities, $unitOfWork, $visited, $entitiesDetached, $invokes);
-                    break;
-
-                default:
-                    // Do nothing
-            }
         }
     }
 
@@ -191,5 +126,77 @@ class DetachEntity
 
         $properyValueFiltered = array_filter($propery->getValue($unitOfWork), $filterCallback, ARRAY_FILTER_USE_KEY);
         $propery->setValue($unitOfWork, $properyValueFiltered);
+    }
+
+    /**
+     * Cascades a detach operation to associated entities.
+     *
+     * @param object     $entity
+     * @param UnitOfWork $unitOfWork
+     * @param array      $visited
+     * @param array      $entitiesDetached
+     * @param array      $invokes
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    private function cascadeDetach(
+        $entity,
+        UnitOfWork $unitOfWork,
+        array &$visited,
+        array &$entitiesDetached,
+        array $invokes
+    ) {
+        $class = $this->em->getClassMetadata(get_class($entity));
+
+        foreach ($class->associationMappings as $assoc) {
+            $relatedEntities = $class->reflFields[$assoc['fieldName']]->getValue($entity);
+            if ($relatedEntities instanceof PersistentCollection ||
+                $relatedEntities instanceof Collection ||
+                $relatedEntities instanceof ArrayCollection
+            ) {
+                $this->unsetFromUnitOfWork($unitOfWork, 'collectionUpdates', spl_object_hash($relatedEntities));
+                $this->unsetFromUnitOfWork($unitOfWork, 'visitedCollections', spl_object_hash($relatedEntities));
+            }
+
+            if ($relatedEntities instanceof PersistentCollection) {
+                foreach ($relatedEntities->getDeleteDiff() as $entityDeleted) {
+                    $this->doDetach($entityDeleted, $unitOfWork, $visited, $entitiesDetached, $invokes);
+                }
+
+                $relatedEntities = $relatedEntities->unwrap();
+            }
+
+            if ($relatedEntities instanceof Collection || is_array($relatedEntities)) {
+                foreach ($relatedEntities as $relatedEntity) {
+                    $this->doDetach($relatedEntity, $unitOfWork, $visited, $entitiesDetached, $invokes);
+                }
+            } elseif ($relatedEntities !== null) {
+                $this->doDetach($relatedEntities, $unitOfWork, $visited, $entitiesDetached, $invokes);
+            }
+        }
+    }
+
+    /**
+     * Unset entity
+     *
+     * @param mixed      $entity
+     * @param UnitOfWork $unitOfWork
+     * @param array      $entitiesDetached
+     *
+     * @throws ReflectionException
+     */
+    private function unsetEntity($entity, UnitOfWork $unitOfWork, array &$entitiesDetached)
+    {
+        $oid = spl_object_hash($entity);
+
+        $entitiesDetached[$oid] = true;
+        $this->unsetFromUnitOfWork($unitOfWork, 'entityInsertions', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'entityUpdates', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'entityDeletions', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'entityIdentifiers', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'entityStates', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'originalEntityData', $oid);
+        $this->unsetFromUnitOfWork($unitOfWork, 'orphanRemovals', $oid);
     }
 }

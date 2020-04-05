@@ -326,17 +326,6 @@ class LinkEntityDoctrine
                     if ($identifiers == $this->getIdentifiers($classMetadata, $item)) {
                         if ($list instanceof Collection) {
                             $originalEntity->{$getterMethod}()->removeElement($item);
-
-                            $metadata = $this->entityManager->getClassMetadata(get_class($item));
-                            $relationToOriginal = $metadata->getAssociationsByTargetClass(get_class($originalEntity));
-                            if (!empty($relationToOriginal)) {
-                                $relationSetter = $this->classContains->getSetterMethod(
-                                    $item,
-                                    array_keys($relationToOriginal)[0]
-                                );
-
-                                $item->{$relationSetter}(null);
-                            }
                         }
                     }
                 }
